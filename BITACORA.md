@@ -47,6 +47,13 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Motivo:** opcional que suma; se arma en pocas líneas y es visual.
 - **Alternativa descartada:** FastAPI (más trabajo, sin UI directa).
 
+### 2026-09-24 — Fase 2: ingesta del dataset (muestra 10k)
+- **Decisión:** indexar una **muestra balanceada de 10.000 correos** (5k phishing / 5k legítimos), **por indicación del profe** (no todo el dataset). Tamaño configurable en `config.py` (`TAMANO_MUESTRA`).
+- **Chunking:** `RecursiveCharacterTextSplitter`, `chunk_size=800`, `chunk_overlap=100` → ~33.792 fragmentos.
+- **Embeddings:** `intfloat/multilingual-e5-small` (locales, multilingües) con subclase `EmbeddingsE5` que agrega los prefijos `passage:`/`query:` que exige e5.
+- **Base vectorial:** ChromaDB persistido en `chroma_db/`, colección `dataset`, metadatos por chunk (fuente, sender, urls, label, id_correo).
+- **Indexado por lotes:** se insertan de a 500 fragmentos. **Motivo:** hacerlo todo junto con `Chroma.from_documents` agotó la RAM y el proceso fue matado; por lotes el pico de memoria se mantiene bajo.
+
 ### 2026-09-24 — Dataset elegido: Phishing Email Dataset (inglés)
 - **Decisión:** usar `naserabdullahalam/phishing-email-dataset` (Kaggle). Temática: **ciberseguridad / correos de phishing**.
 - **Motivo:** texto real de correos (asunto + cuerpo + etiqueta phishing/legítimo), ideal para RAG y para un chatbot demostrable ("¿este correo es phishing?", "¿qué patrones usan?").
@@ -99,6 +106,7 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Cambio de estructura:** de notebook a módulos `.py` (uno por fase) + `main.py`.
 - **Dataset consolidado:** `src/datos.py` + `scripts/consolidar_dataset.py` generan `data/dataset_consolidado.csv` (82.486 filas). Módulos esqueleto creados para Fases 2–6.
 - Entorno virtual `venv` creado; instalados kagglehub, pandas y python-dotenv.
+- **Fase 2 (ingesta):** `src/ingesta.py` + `scripts/construir_indice.py` — muestra 10k balanceada, chunking, embeddings e5 y Chroma (`chroma_db/`, colección `dataset`) indexado por lotes. Instaladas sentence-transformers, chromadb, langchain-chroma, langchain-huggingface, langchain-text-splitters.
 
 ---
 
