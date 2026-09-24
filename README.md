@@ -38,8 +38,11 @@ pip install -r requirements.txt
 cp .env.example .env      # en Windows: copy .env.example .env
 # editar .env y completar GROQ_API_KEY=...
 
-# 4. Abrir el notebook
-jupyter notebook notebooks/agentic_rag.ipynb
+# 4. Dataset: dejar los CSV de Kaggle en data/ y consolidarlos en uno solo
+python -m scripts.consolidar_dataset   # genera data/dataset_consolidado.csv
+
+# 5. Ejecutar
+python main.py
 ```
 
 ## Estructura
@@ -49,9 +52,21 @@ jupyter notebook notebooks/agentic_rag.ipynb
 ├── BITACORA.md          # decisiones de diseño y avances
 ├── requirements.txt
 ├── .env.example
-├── notebooks/
-│   └── agentic_rag.ipynb   # entregable principal
-├── src/                    # helpers reutilizables (opcional)
-├── data/                   # dataset + papers (no se commitea)
-└── chroma_db/              # base vectorial persistida (no se commitea)
+├── main.py              # punto de entrada
+├── src/                 # módulos del sistema (uno por fase)
+│   ├── config.py        # rutas, modelos y constantes
+│   ├── datos.py         # Fase 1: consolidación del dataset
+│   ├── ingesta.py       # Fase 2: chunking + embeddings + Chroma
+│   ├── recuperacion.py  # Fase 3: búsqueda semántica (tool)
+│   ├── agente.py        # Fase 4: grafo LangGraph
+│   ├── memoria.py       # Fase 5: memoria corto/largo plazo
+│   └── chatbot.py       # Fase 6: loop de conversación
+├── scripts/
+│   └── consolidar_dataset.py
+├── data/                # dataset + papers (no se commitea)
+└── chroma_db/           # base vectorial persistida (no se commitea)
 ```
+
+> **Dataset:** Phishing Email Dataset (`naserabdullahalam/phishing-email-dataset`).
+> Se descarga de Kaggle (7 CSV) y `scripts/consolidar_dataset.py` los une en un único
+> `data/dataset_consolidado.csv` con las columnas `fuente, sender, subject, body, urls, label`.
