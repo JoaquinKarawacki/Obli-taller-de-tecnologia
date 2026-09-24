@@ -15,6 +15,7 @@ chromadb
 langchain-chroma
 
 # --- Datos y documentos ---
+kagglehub
 pandas
 pypdf
 langchain-text-splitters
