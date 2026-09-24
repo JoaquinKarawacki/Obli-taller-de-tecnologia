@@ -1,0 +1,28 @@
+# --- Orquestación del agente ---
+langgraph
+langchain
+langchain-core
+
+# --- LLM (Groq, gratis) ---
+langchain-groq
+
+# --- Embeddings locales (gratis, multilingüe) ---
+sentence-transformers
+langchain-huggingface
+
+# --- Base vectorial ---
+chromadb
+langchain-chroma
+
+# --- Datos y documentos ---
+pandas
+pypdf
+langchain-text-splitters
+
+# --- Interfaz (demo) ---
+gradio
+
+# --- Entorno / notebook ---
+python-dotenv
+jupyter
+ipykernel

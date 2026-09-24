@@ -1,0 +1,22 @@
+# Claves y entorno
+.env
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Datos y base vectorial (no se commitean)
+data/
+chroma_db/
+*.sqlite3
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
