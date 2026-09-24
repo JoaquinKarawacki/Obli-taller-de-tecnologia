@@ -56,7 +56,9 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [ ] Pipeline RAG completo integrado dentro del agente (recuperación + razonamiento + generación).
 
 ### 2.6 Entregables
-- [ ] Notebook **`.ipynb`** funcional **con sus outputs**, integrando: LLM, embeddings, base vectorial, agentic RAG y chatbot.
+- [ ] Implementación en **módulos `.py`** (decisión del equipo: más modular y legible que el notebook).
+- [ ] **Notebook demo** al cierre que importe los módulos y muestre outputs — para cubrir el "notebook funcional con sus outputs" que menciona la letra (ver nota en `BITACORA.md`).
+- [ ] Integra: LLM, embeddings, base vectorial, agentic RAG y chatbot.
 - [ ] Documentación completa (ver sección 6).
 
 ---
@@ -77,7 +79,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 | Memoria corto plazo | **Checkpointer de LangGraph** (`MemorySaver` → luego `SqliteSaver`) | Aislada por `thread_id` |
 | Memoria largo plazo | **Store de LangGraph** (`InMemoryStore` → persistente) | Compartida entre conversaciones, por `user_id` |
 | Sesiones paralelas | `thread_id` (conversación) + `user_id` (usuario) | |
-| Entregable | **Jupyter Notebook** (`.ipynb`) | |
+| Entregable | **Módulos `.py`** (+ notebook demo opcional al cierre) | Decisión del equipo: más modular y legible |
 | Interfaz (demo) | **Gradio** | UI de chat para la defensa (opcional que suma) |
 | Otros opcionales | Comparar embeddings/LLMs/chunking | Suman, no restan |
 
@@ -151,11 +153,19 @@ Obli-taller-de-tecnologia/
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
-├── notebooks/
-│   └── agentic_rag.ipynb      # entregable principal
+├── main.py                    # punto de entrada
+├── src/                       # módulos del sistema (uno por fase)
+│   ├── config.py              # rutas, modelos y constantes
+│   ├── datos.py               # Fase 1: consolidación del dataset
+│   ├── ingesta.py             # Fase 2: chunking + embeddings + Chroma
+│   ├── recuperacion.py        # Fase 3: búsqueda semántica (tool)
+│   ├── agente.py              # Fase 4: grafo LangGraph
+│   ├── memoria.py             # Fase 5: memoria corto/largo plazo
+│   └── chatbot.py             # Fase 6: loop de conversación
+├── scripts/
+│   └── consolidar_dataset.py  # genera data/dataset_consolidado.csv
 ├── data/                      # dataset + papers (no se commitea)
-├── chroma_db/                 # base vectorial persistida (no se commitea)
-└── src/                       # (opcional) helpers reutilizables
+└── chroma_db/                 # base vectorial persistida (no se commitea)
 ```
 
 ---

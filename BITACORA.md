@@ -31,6 +31,17 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Motivo:** Groq no ofrece API de embeddings; este modelo es gratis, local y bueno para **español**.
 - **Alternativas / opcional:** comparar con otros modelos multilingües (Fase 8).
 
+### 2026-09-24 — Estructura: módulos .py en vez de notebook
+- **Decisión:** el equipo optó por **archivos `.py` separados** (uno por fase) en lugar de un único notebook, por ser más modular y legible y permitir trabajo en paralelo.
+- **La letra dice "preferentemente `.ipynb`"** y pide "notebook con outputs" en entregables → **no es obligatorio**. Para cubrirlo, al cierre se agrega un **notebook demo** que importa los módulos y muestra outputs.
+- **Alternativa descartada:** todo en un solo notebook (menos legible, difícil de dividir entre integrantes).
+
+### 2026-09-24 — Consolidación del dataset en un único CSV
+- **Decisión:** unir los 6 corpus individuales en `data/dataset_consolidado.csv` con columnas `fuente, sender, subject, body, urls, label`.
+- **Motivo:** el dataset trae 7 CSV; `phishing_email.csv` ya es una combinación pero **pierde metadatos** (sender, urls). Se arma uno propio conservando lo relevante.
+- **Detalles:** se descartan `receiver` y `date` (poco útiles/inconsistentes); Enron y Ling no tienen `sender`/`urls` (quedan NaN); se quitan duplicados por `(subject, body)`.
+- **Resultado:** 82.486 filas (42.891 phishing / 39.595 legítimos). Archivo de ~145 MB, regenerable con `python -m scripts.consolidar_dataset` (no se commitea).
+
 ### 2026-09-24 — Interfaz: Gradio
 - **Decisión:** UI de chat con Gradio para la demo/defensa.
 - **Motivo:** opcional que suma; se arma en pocas líneas y es visual.
@@ -85,6 +96,9 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - Fase 0 (setup): README, esqueleto del notebook y estructura de carpetas.
 - **Dataset cerrado:** Phishing Email Dataset (inglés) + enfoque multilingüe (chatbot ES+EN).
 - Agregado `kagglehub` a dependencias.
+- **Cambio de estructura:** de notebook a módulos `.py` (uno por fase) + `main.py`.
+- **Dataset consolidado:** `src/datos.py` + `scripts/consolidar_dataset.py` generan `data/dataset_consolidado.csv` (82.486 filas). Módulos esqueleto creados para Fases 2–6.
+- Entorno virtual `venv` creado; instalados kagglehub, pandas y python-dotenv.
 
 ---
 
