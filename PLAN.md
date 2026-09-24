@@ -15,7 +15,7 @@
 
 Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 
-1. Responder consultas sobre **un dataset elegido de Kaggle** (temática a definir).
+1. Responder consultas sobre el **Phishing Email Dataset** de Kaggle (ciberseguridad, inglés), interactuando en **español o inglés**.
 2. Procesar **documentos largos (papers)** vía chunking y responder preguntas sobre ellos.
 3. Mantener contexto y orquestar acciones con **agentes + tool calling** y **memoria a corto y largo plazo**.
 
@@ -205,7 +205,8 @@ develop ─────●────●────●──────●─
 
 ---
 
-## 9. Pendientes de definición
-- [ ] **Dataset / temática** (en evaluación — ver opciones en `BITACORA.md`).
+## 9. Definiciones y pendientes
+- [x] **Dataset / temática:** `naserabdullahalam/phishing-email-dataset` — Phishing Email Dataset (ciberseguridad, **inglés**).
+- [x] **Enfoque multilingüe:** datos en inglés, chatbot en **ES + EN** (LLM y embeddings multilingües → retrieval cross-lingual).
 - [ ] Integrantes del grupo y números de estudiante.
 - [ ] Papers a usar en la parte de documentos.

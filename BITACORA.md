@@ -36,9 +36,16 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Motivo:** opcional que suma; se arma en pocas líneas y es visual.
 - **Alternativa descartada:** FastAPI (más trabajo, sin UI directa).
 
-### 2026-09-24 — Idioma del dataset: español (a confirmar)
-- **Decisión provisoria:** buscar dataset con **texto en español**.
-- **Estado:** en evaluación de temática (ver más abajo).
+### 2026-09-24 — Dataset elegido: Phishing Email Dataset (inglés)
+- **Decisión:** usar `naserabdullahalam/phishing-email-dataset` (Kaggle). Temática: **ciberseguridad / correos de phishing**.
+- **Motivo:** texto real de correos (asunto + cuerpo + etiqueta phishing/legítimo), ideal para RAG y para un chatbot demostrable ("¿este correo es phishing?", "¿qué patrones usan?").
+- **Idioma de los datos:** inglés.
+- **Descarga:** vía `kagglehub` (`kagglehub.dataset_download("naserabdullahalam/phishing-email-dataset")`).
+
+### 2026-09-24 — Enfoque multilingüe (datos EN, chatbot ES+EN)
+- **Decisión:** los datos están en inglés pero el chatbot interactúa en **español e inglés** (responde en el idioma en que le hablen).
+- **Implicancia clave:** se usa **LLM multilingüe** (Llama 3.3 70B, ya elegido) y **embeddings multilingües** (`multilingual-e5-small`, ya elegido) para permitir **retrieval cross-lingual**: una pregunta en español recupera correctamente fragmentos en inglés.
+- **Alternativa descartada:** embeddings solo-inglés (romperían las consultas en español).
 
 ### 2026-09-24 — Código 100% en español
 - **Decisión:** todo el código (variables, funciones, clases, comentarios, docstrings, logs, prompts y textos al usuario) se escribe en **español**.
@@ -51,20 +58,19 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 
 ---
 
-## Temática / dataset — opciones en evaluación
+## Temática / dataset — DECIDIDO
 
-Búsqueda en Kaggle (2026-09-24). Prioridad: **texto rico en español** para lucir chunking + búsqueda semántica.
+- ✅ **Dataset:** `naserabdullahalam/phishing-email-dataset` — Phishing Email Dataset (Kaggle).
+- **Temática:** ciberseguridad / correos de phishing. **Idioma:** inglés.
+- **Chatbot:** multilingüe (ES + EN).
 
-| Género | Dataset (Kaggle) | Tamaño | Estado |
-|--------|------------------|--------|--------|
-| 📰 Noticias | Spanish News Classification (Kevin Morgado) | ~1 MB | Candidato fuerte (liviano) |
-| 🎬 Cine / reseñas | IMDB 50K Movie Reviews (Spanish) (luisdiegofv97) | ~55 MB | Candidato (recortar para 40 MB) |
-| 🏨 Turismo / hoteles | Andalusian Hotels' Reviews | ~5 MB | Candidato |
-| 🛒 E-commerce | Amazon Reviews (multilingual, incluye español) | grande | Alternativa |
-| 📚 Enciclopédico | Wikibooks / 120M Word Spanish Corpus | 2 GB / 513 MB | Descartado por tamaño |
-
-- **Nota:** el texto médico/enfermedades en español en Kaggle resultó escaso (resultados tabulares o en inglés), por eso se abrió el abanico a otros géneros.
-- **Pendiente:** decisión final de temática.
+### Opciones evaluadas antes (descartadas)
+| Género | Dataset (Kaggle) | Motivo de descarte |
+|--------|------------------|--------------------|
+| 📰 Noticias ES | Spanish News Classification | Se optó por temática de ciberseguridad |
+| 🎬 Cine ES | IMDB 50K Movie Reviews (Spanish) | ídem |
+| 🏨 Hoteles ES | Andalusian Hotels' Reviews | ídem |
+| 🩺 Enfermedades ES | — | Texto médico en español escaso en Kaggle |
 
 ---
 
@@ -75,7 +81,10 @@ Búsqueda en Kaggle (2026-09-24). Prioridad: **texto rico en español** para luc
 - Creada rama `develop` para el trabajo.
 - Definido stack tecnológico inicial (ver `PLAN.md` §3).
 - Creados `PLAN.md` (plan + fases + stack) y `BITACORA.md` (este archivo).
-- Exploración de datasets en Kaggle; temática aún sin cerrar.
+- Definidas convenciones: código 100% en español y flujo de ramas (feature → develop).
+- Fase 0 (setup): README, esqueleto del notebook y estructura de carpetas.
+- **Dataset cerrado:** Phishing Email Dataset (inglés) + enfoque multilingüe (chatbot ES+EN).
+- Agregado `kagglehub` a dependencias.
 
 ---
 
