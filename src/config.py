@@ -33,6 +33,18 @@ CSV_CONSOLIDADO = DIR_DATOS / "dataset_consolidado.csv"
 MODELO_LLM = "llama-3.3-70b-versatile"          # Groq (gratis, multilingüe)
 MODELO_EMBEDDINGS = "intfloat/multilingual-e5-small"  # embeddings locales multilingües
 
+# El modelo e5 requiere prefijos: "passage: " para documentos y "query: " para consultas.
+PREFIJO_PASSAGE = "passage: "
+PREFIJO_QUERY = "query: "
+
+# --- Ingesta (Fase 2) ---
+# Cantidad de correos a indexar (indicación del profe: 10k, no todo el dataset).
+# Se toma balanceado: la mitad phishing (label=1) y la mitad legítimos (label=0).
+TAMANO_MUESTRA = 10_000
+SEMILLA = 42            # para que la muestra sea reproducible
+CHUNK_SIZE = 800        # tamaño de cada fragmento (caracteres)
+CHUNK_OVERLAP = 100     # solapamiento entre fragmentos
+
 # --- ChromaDB ---
 COLECCION_DATASET = "dataset"   # correos del dataset de phishing
 COLECCION_PAPERS = "papers"     # documentos largos (papers)

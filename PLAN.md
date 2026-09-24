@@ -103,9 +103,10 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [ ] Conseguir 1–3 papers para la parte de documentos.
 
 ### Fase 2 — Ingesta y embeddings
-- [ ] Preprocesar dataset y papers.
-- [ ] Chunking.
-- [ ] Generar embeddings y poblar Chroma (colecciones `dataset` y `papers`).
+- [x] Preprocesar dataset (muestra balanceada de 10k por indicación del profe).
+- [x] Chunking (RecursiveCharacterTextSplitter, 800/100).
+- [x] Generar embeddings (e5 multilingüe) y poblar Chroma (colección `dataset`), indexado por lotes.
+- [ ] Poblar la colección `papers` (fase posterior).
 
 ### Fase 3 — Retrieval (RAG)
 - [ ] Función de búsqueda semántica (top-k) sobre cada colección.
