@@ -177,7 +177,35 @@ Obli-taller-de-tecnologia/
 
 ---
 
-## 8. Pendientes de definición
+## 8. Convenciones del proyecto
+
+### 8.1 Idioma del código
+- **Todo el código en español al 100%.** Nombres de variables, funciones, clases, comentarios, docstrings, mensajes de log y prompts se escriben en español.
+- Ejemplos: `buscar_fragmentos()`, `memoria_largo_plazo`, `clasificar_consulta()`, `respuesta_generada`.
+- Excepción razonable: nombres propios de librerías/APIs (`LangGraph`, `thread_id`, etc.) se mantienen como son.
+- Los textos que ve el usuario final del chatbot también en español.
+
+### 8.2 Flujo de trabajo con Git (branching)
+- Rama estable de integración: **`develop`**.
+- **Una rama por cada tarea/feature**, que sale de `develop`:
+  - Nomenclatura: `feature/<descripcion-corta>` (ej.: `feature/ingesta-embeddings`, `feature/agente-router`).
+  - Otros prefijos según el caso: `fix/`, `docs/`, `experimento/`.
+- Al terminar la tarea, **merge de la rama a `develop`** (y se borra la rama de feature).
+- `main` queda como rama de entrega/estable; se mergea `develop → main` en los hitos.
+- Commits en español, descriptivos.
+
+```
+main ──────●───────────────────●──────  (entregas / hitos)
+            \                  /
+develop ─────●────●────●──────●────────  (integración)
+                   \    \
+                    \    feature/agente-router
+                     feature/ingesta-embeddings
+```
+
+---
+
+## 9. Pendientes de definición
 - [ ] **Dataset / temática** (en evaluación — ver opciones en `BITACORA.md`).
 - [ ] Integrantes del grupo y números de estudiante.
 - [ ] Papers a usar en la parte de documentos.

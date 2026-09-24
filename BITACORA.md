@@ -40,6 +40,15 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Decisión provisoria:** buscar dataset con **texto en español**.
 - **Estado:** en evaluación de temática (ver más abajo).
 
+### 2026-09-24 — Código 100% en español
+- **Decisión:** todo el código (variables, funciones, clases, comentarios, docstrings, logs, prompts y textos al usuario) se escribe en **español**.
+- **Motivo:** coherencia con el proyecto y claridad para el grupo y la defensa.
+- **Excepción:** nombres propios de librerías/APIs se mantienen (`LangGraph`, `thread_id`, etc.).
+
+### 2026-09-24 — Flujo de Git: una rama por tarea → merge a develop
+- **Decisión:** trabajar con **una rama por feature/tarea** que sale de `develop` (`feature/...`, `fix/...`, `docs/...`), y al terminar **mergear a `develop`**. `main` es la rama estable de entrega.
+- **Motivo:** historial ordenado, trabajo paralelo entre integrantes y `develop` siempre integrable.
+
 ---
 
 ## Temática / dataset — opciones en evaluación
