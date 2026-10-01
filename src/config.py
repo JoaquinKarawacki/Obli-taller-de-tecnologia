@@ -45,6 +45,36 @@ SEMILLA = 42            # para que la muestra sea reproducible
 CHUNK_SIZE = 800        # tamaño de cada fragmento (caracteres)
 CHUNK_OVERLAP = 100     # solapamiento entre fragmentos
 
+# --- Papers (documentos largos) ---
+# Los PDFs de la materia se copian a data/papers/ (no se commitean).
+DIR_PAPERS = DIR_DATOS / "papers"
+# Título legible de cada paper (por nombre de archivo). Se guarda como metadato en
+# cada fragmento: sirve para citar la fuente y para filtrar la búsqueda por paper.
+# Si aparece un PDF que no está acá, se usa el nombre del archivo como título.
+TITULOS_PAPERS = {
+    "2507.14805v1.pdf": "Subliminal Learning: Language models transmit behavioral traits via hidden signals in data",
+    "Attention is all you need.pdf": "Attention Is All You Need",
+    "Designing Data-Intensive Applications The Big Ideas Behind Reliable, Scalable, and Maintainable Systems by Martin Kleppmann (z-l.pdf": "Designing Data-Intensive Applications (Martin Kleppmann)",
+    "GPT Improving Language Understanding by Generative Pretraining.pdf": "Improving Language Understanding by Generative Pre-Training (GPT)",
+    "Language Models are Few-Shot Learners (GPT3).pdf": "Language Models are Few-Shot Learners (GPT-3)",
+    "Scaling Laws for Neural Language Models.pdf": "Scaling Laws for Neural Language Models",
+}
+
+# Proporción mínima de letras para indexar un fragmento de paper (descarta tablas
+# de números, que contaminan la búsqueda; ver ingesta.es_fragmento_util).
+PROPORCION_MIN_LETRAS = 0.5
+
+# --- Recuperación (Fase 3) ---
+K_FRAGMENTOS = 4        # cantidad de fragmentos que se recuperan por búsqueda
+# Relevancia mínima (0 a 1) para considerar que un fragmento es evidencia válida.
+# Si ningún fragmento la supera, la búsqueda devuelve "sin evidencia" y el agente
+# debe admitir que no tiene información (control de alucinaciones).
+# Calibrado con scripts/probar_recuperacion.py: las consultas pertinentes dieron
+# 0.72-0.83 y las ajenas 0.63-0.75 (e5 "comprime" los puntajes y se solapan).
+# Por eso es solo un PISO que corta lo claramente ajeno; el resto lo filtran el
+# router (small-talk no busca) y el prompt del generador (verificar evidencia).
+UMBRAL_RELEVANCIA = 0.68
+
 # --- ChromaDB ---
 COLECCION_DATASET = "dataset"   # correos del dataset de phishing
 COLECCION_PAPERS = "papers"     # documentos largos (papers)
