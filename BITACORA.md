@@ -91,7 +91,6 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - `PyPDFLoader` (un `Document` por página) + `normalize_text` (→ `normalizar_texto`, preprocesamiento mínimo) + `split_documents`. Se verificó que el resultado es **idéntico** al índice que ya estaba construido (2.937 fragmentos), así que no hubo que reindexar.
   - `LongContextReorder` sobre los fragmentos recuperados (problema "Lost in the Middle"): los más relevantes van a los extremos del contexto.
   - Filtros por metadata (Parte 3 del lab), pero con metadata **real** (`titulo`, `pagina`, `label`) en vez de sintética.
-  - Comparación de estrategias de chunking (Parte 2), ampliada a un experimento que mide calidad de recuperación (ver "Experimentos opcionales").
   - Pregunta con contexto vs. sin contexto (Parte 1): queda para el notebook demo (necesita el LLM).
 - **Nota:** `PyPDFLoader` y `LongContextReorder` vienen de `langchain-community`, que LangChain marcó como *sunset* (sin mantenimiento activo). Funciona; si en el futuro se rompe, ambos son triviales de reemplazar (`pypdf` directo y un reordenamiento de 5 líneas).
 
@@ -156,32 +155,6 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 | Todas las consultas ajenas caían en la misma **tabla de números** de GPT-3 (pág. 63): los fragmentos sin texto real quedan "cerca de todo" en el espacio vectorial. | Filtro en la ingesta: se descartan fragmentos con < 50% de letras (34 de 2.971, casi todos tablas). Las tablas con contenido útil (Tabla 2 de Attention, parámetros de GPT-3) quedan por encima y se conservan. |
 | Las **bibliografías** de los papers también atraen consultas ajenas ("mundial de fútbol 2022" → referencias de GPT-3 con relevancia 0.69, apenas sobre el umbral). | **No se filtran** (decisión consciente): una heurística por años/"et al."/"arXiv" también marcaba párrafos con contenido real. Se cubre con las otras capas (router + prompt del generador que verifica que el fragmento responda). Queda como mejora posible. |
 | Sin el índice del dataset construido, Chroma crea una colección vacía y la búsqueda decía "sin evidencia", lo que el agente interpretaría como "no hay correos así". | La búsqueda detecta la colección vacía y la tool devuelve un `ERROR` explícito. |
-
----
-
-## Experimentos opcionales
-
-### 2026-10-01 — Chunking × embeddings (`scripts/experimento_chunking_embeddings.py`)
-- **Qué se midió:** 9 preguntas sobre los 4 papers cortos, cada una en español y en inglés. Para cada pregunta se conoce una frase del paper que contiene la respuesta; hay acierto si está en alguno de los 4 fragmentos recuperados (acierto@4). MRR = promedio de 1/posición del primer fragmento correcto. Chroma en memoria.
-- **Estrategias:** las 3 del Lab03 (250/30, 600/100, 1200/200) + la del proyecto (800/100). **Modelos:** `all-MiniLM-L6-v2` (Lab02/03, entrenado en inglés) vs `multilingual-e5-small` (proyecto).
-
-| Embeddings | Chunking | Fragmentos | Indexado (s) | Acierto@4 ES | MRR ES | Acierto@4 EN | MRR EN |
-|---|---|---|---|---|---|---|---|
-| all-MiniLM-L6-v2 | 250/30 | 1202 | 14 | 22% | 0.15 | 56% | 0.43 |
-| all-MiniLM-L6-v2 | 600/100 | 549 | 14 | 11% | 0.06 | 56% | 0.47 |
-| all-MiniLM-L6-v2 | 1200/200 | 287 | 9 | 11% | 0.06 | 67% | 0.30 |
-| all-MiniLM-L6-v2 | 800/100 | 400 | 12 | 11% | 0.03 | 44% | 0.23 |
-| multilingual-e5-small | 250/30 | 1202 | 26 | 33% | 0.26 | 33% | 0.33 |
-| multilingual-e5-small | 600/100 | 549 | 28 | 44% | 0.25 | 67% | 0.46 |
-| multilingual-e5-small | 1200/200 | 287 | 28 | 56% | 0.34 | 56% | 0.42 |
-| multilingual-e5-small | 800/100 | 400 | 26 | 33% | 0.20 | 44% | 0.44 |
-
-- **Conclusiones:**
-  - **e5 multilingüe es claramente mejor en español** (33–56% vs 11–22%): MiniLM casi no recupera nada si la pregunta está en español y el paper en inglés. Confirma con datos la decisión de embeddings (chatbot ES+EN sobre datos en inglés).
-  - En inglés ambos modelos rinden parecido (44–67%): la ventaja de e5 es el cross-lingual.
-  - MiniLM indexa ~2x más rápido (modelo más chico, 384 dims ambos).
-  - **Chunking:** los chunks muy chicos (250) empeoran con e5; 600 y 1200 rindieron mejor que 800. Pero con 9 preguntas cada una vale 11%, así que las diferencias entre tamaños **no son concluyentes**. No se cambió 800/100 (cambiarlo implica reindexar dataset y papers); queda como mejora: ampliar la batería de preguntas y re-evaluar 600 vs 800 vs 1200.
-  - La métrica es estricta (exige la frase exacta en el fragmento), por eso los porcentajes absolutos son bajos; sirve para **comparar** configuraciones, no como precisión real del chatbot.
 
 ---
 
