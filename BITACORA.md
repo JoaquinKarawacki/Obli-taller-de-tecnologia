@@ -74,6 +74,18 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Decisión:** trabajar con **una rama por feature/tarea** que sale de `develop` (`feature/...`, `fix/...`, `docs/...`), y al terminar **mergear a `develop`**. `main` es la rama estable de entrega.
 - **Motivo:** historial ordenado, trabajo paralelo entre integrantes y `develop` siempre integrable.
 
+### 2026-10-01 — Papers: los 6 PDFs de la materia (colección `papers`)
+- **Decisión:** indexar los 6 documentos de "Obligatorio setiembre 2026 - Papers" (Attention, GPT, GPT-3, Scaling Laws, Subliminal Learning y el libro *Designing Data-Intensive Applications*), copiados a `data/papers/`.
+- **Cómo:** `pypdf` extrae el texto **página por página** (para guardar el número de página y poder citar), se limpia (guiones de corte de línea, saltos), chunking 800/100 y embeddings e5 → colección `papers`, por lotes. Metadatos: `titulo`, `archivo`, `pagina`.
+- **Resultado:** 2.937 fragmentos (2.191 son del libro de Kleppmann). Indexado en ~9 min en CPU.
+- **Títulos legibles** en `config.TITULOS_PAPERS`: sirven para citar y para filtrar la búsqueda por paper.
+
+### 2026-10-01 — Fase 3: recuperación como tools + umbral de relevancia
+- **Decisión:** adaptar el pipeline del `Demo_vectoriales_crawler` (`search` + `format_message`) a `src/recuperacion.py`: `buscar_fragmentos()` (top-k con puntaje 0-1) y `formatear_fragmentos()` (contexto numerado con la fuente: paper + página, o corpus + etiqueta del correo).
+- **Tools para el agente:** `buscar_en_papers` (filtro opcional por paper, con título aproximado), `buscar_en_dataset` (filtro opcional phishing/legítimo), `listar_papers` y `estadisticas_dataset` (conteos con pandas: la búsqueda semántica no sirve para contar).
+- **Control de alucinaciones:** si ningún fragmento supera `UMBRAL_RELEVANCIA` la tool devuelve `SIN EVIDENCIA` en vez de fragmentos irrelevantes, y si una colección no está construida devuelve un `ERROR` explícito (no "no hay nada").
+- **Umbral = 0.68** (calibrado, ver "Desafíos"). Es un piso; el router y el prompt del generador completan el filtrado.
+
 ---
 
 ## Temática / dataset — DECIDIDO
@@ -108,6 +120,11 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - Entorno virtual `venv` creado; instalados kagglehub, pandas y python-dotenv.
 - **Fase 2 (ingesta):** `src/ingesta.py` + `scripts/construir_indice.py` — muestra 10k balanceada, chunking, embeddings e5 y Chroma (`chroma_db/`, colección `dataset`) indexado por lotes. Instaladas sentence-transformers, chromadb, langchain-chroma, langchain-huggingface, langchain-text-splitters.
 
+### 2026-10-01
+- **Fase 2 (papers):** `construir_indice_papers()` + `scripts/construir_indice_papers.py`. 2.937 fragmentos en la colección `papers`. Retrieval cross-lingual verificado (preguntas en español → página correcta del paper en inglés).
+- **Fase 3 (recuperación):** `src/recuperacion.py` con búsqueda, formateo con fuentes y 4 tools. `scripts/probar_recuperacion.py` para calibrar el umbral.
+- Probado con Python 3.14 (todas las dependencias instalan bien).
+
 ---
 
 ## Desafíos y soluciones
@@ -115,7 +132,10 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 
 | Desafío | Solución aplicada |
 |---------|-------------------|
-| — | — |
+| La búsqueda siempre devuelve "algo", aunque la pregunta no tenga nada que ver con los documentos (ej. "receta de lasaña") → riesgo de alucinar con contexto irrelevante. | Umbral de relevancia: debajo de él la tool devuelve `SIN EVIDENCIA` y el agente debe admitir que no sabe. |
+| Los puntajes de e5 están "comprimidos" y se **solapan**: consultas pertinentes 0.72–0.83, ajenas 0.63–0.75 ("hola, ¿cómo estás?" dio 0.75). Un umbral solo no separa bien. | Umbral como **piso** (0.68: corta lo claramente ajeno sin perder preguntas válidas) + defensa en capas: el router no busca en small-talk y el generador verifica que los fragmentos respondan. |
+| Todas las consultas ajenas caían en la misma **tabla de números** de GPT-3 (pág. 63): los fragmentos sin texto real quedan "cerca de todo" en el espacio vectorial. | Filtro en la ingesta: se descartan fragmentos con < 50% de letras (34 de 2.971, casi todos tablas). Las tablas con contenido útil (Tabla 2 de Attention, parámetros de GPT-3) quedan por encima y se conservan. |
+| Sin el índice del dataset construido, Chroma crea una colección vacía y la búsqueda decía "sin evidencia", lo que el agente interpretaría como "no hay correos así". | La búsqueda detecta la colección vacía y la tool devuelve un `ERROR` explícito. |
 
 ---
 
