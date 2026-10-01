@@ -19,10 +19,14 @@ correos en inglés).
 Los embeddings son locales (modelo e5 multilingüe), así que esta fase no necesita
 la API key de Groq.
 """
+import re
 import time
+from functools import lru_cache
+from pathlib import Path
 
 import pandas as pd
 from langchain_chroma import Chroma
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -51,8 +55,9 @@ class EmbeddingsE5(HuggingFaceEmbeddings):
         return super().embed_query(config.PREFIJO_QUERY + texto)
 
 
+@lru_cache(maxsize=1)
 def crear_embeddings() -> EmbeddingsE5:
-    """Prende el traductor de embeddings.
+    """Prende el traductor de embeddings (una sola vez por proceso).
 
     La primera vez descarga el modelo desde internet (~470 MB); después queda
     cacheado en la máquina y ya no se vuelve a bajar.
@@ -199,7 +204,109 @@ def cargar_indice_dataset() -> Chroma:
     )
 
 
-def construir_indice_papers(rutas_pdf):
-    """Procesa papers (PDF), los chunkea y los guarda en Chroma."""
-    # TODO (fase posterior): leer PDFs + chunking + embeddings + colección papers
-    raise NotImplementedError
+# ---------------------------------------------------------------------------
+# Papers (documentos largos en PDF)
+# ---------------------------------------------------------------------------
+# Mismo proceso que con los correos, pero la fuente son PDFs. Sigue el pipeline
+# del Lab03 (RAG Pipeline):
+#
+#     PyPDFLoader (un Document por página) -> normalizar texto -> split_documents
+#       -> filtrar fragmentos inútiles -> embeddings -> Chroma
+#
+# Al cargar por página, cada fragmento hereda su número de página: así el chatbot
+# puede citar "según <paper>, pág. N".
+
+
+def normalizar_texto(texto: str) -> str:
+    """Preprocesamiento mínimo del texto (``normalize_text`` del Lab03).
+
+    Como dice el lab, se mantiene mínimo para preservar la semántica: los
+    embeddings modernos funcionan mejor sin lematizar ni quitar stopwords.
+    - Une las palabras cortadas con guion al final de línea ("trans-\\nformer"),
+      agregado para los PDFs.
+    - Normaliza los espacios (los saltos de línea del PDF cortan las oraciones).
+    """
+    texto = re.sub(r"-\n(\w)", r"\1", texto)
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def es_fragmento_util(texto: str) -> bool:
+    """Descarta fragmentos que son casi todo números/símbolos (tablas de resultados).
+
+    Problema detectado al calibrar: esos fragmentos no tienen significado propio y
+    sus embeddings quedan "cerca de todo", así que aparecían como mejor resultado
+    para preguntas que no tienen nada que ver (ej. "receta de lasaña" -> tabla de
+    BLEU de GPT-3). Se exige que al menos la mitad de los caracteres sean letras.
+    """
+    letras = sum(caracter.isalpha() for caracter in texto)
+    return letras / max(len(texto), 1) >= config.PROPORCION_MIN_LETRAS
+
+
+def _paper_a_documentos(ruta_pdf: Path, separador) -> list[Document]:
+    """Convierte un PDF en fragmentos (Document) con título y página."""
+    titulo = config.TITULOS_PAPERS.get(ruta_pdf.name, ruta_pdf.stem)
+
+    # Lab03: PyPDFLoader devuelve un Document por página (metadata "page" desde 0).
+    paginas = PyPDFLoader(str(ruta_pdf)).load()
+    for pagina in paginas:
+        pagina.page_content = normalizar_texto(pagina.page_content)
+        pagina.metadata = {"titulo": titulo, "archivo": ruta_pdf.name, "pagina": pagina.metadata["page"] + 1}
+    # Páginas en blanco, solo imágenes o casi vacías no aportan nada.
+    paginas = [pagina for pagina in paginas if len(pagina.page_content) >= 50]
+
+    # Lab03: split_documents conserva la metadata de la página en cada fragmento.
+    fragmentos = separador.split_documents(paginas)
+    return [fragmento for fragmento in fragmentos if es_fragmento_util(fragmento.page_content)]
+
+
+def construir_indice_papers(rutas_pdf: list[Path] | None = None, tam_lote: int = 500) -> Chroma:
+    """Arma y guarda el índice vectorial de los papers (colección ``papers``).
+
+    Args:
+        rutas_pdf: PDFs a indexar. Por defecto, todos los de ``data/papers/``.
+        tam_lote: fragmentos que se insertan por vez (igual que con el dataset,
+            para no agotar la RAM).
+    """
+    inicio = time.time()
+    if rutas_pdf is None:
+        rutas_pdf = sorted(config.DIR_PAPERS.glob("*.pdf"))
+    if not rutas_pdf:
+        raise FileNotFoundError(f"No hay PDFs en {config.DIR_PAPERS}")
+
+    separador = RecursiveCharacterTextSplitter(
+        chunk_size=config.CHUNK_SIZE,
+        chunk_overlap=config.CHUNK_OVERLAP,
+    )
+
+    print("Leyendo y fragmentando papers...")
+    documentos: list[Document] = []
+    for ruta in rutas_pdf:
+        docs_paper = _paper_a_documentos(ruta, separador)
+        print(f"  {docs_paper[0].metadata['titulo'] if docs_paper else ruta.name}: {len(docs_paper)} fragmentos")
+        documentos.extend(docs_paper)
+    total = len(documentos)
+    print(f"  total de fragmentos: {total}")
+
+    print("Creando embeddings e indexando en Chroma por lotes...")
+    config.DIR_CHROMA.mkdir(exist_ok=True)
+    indice = cargar_indice(config.COLECCION_PAPERS)
+    try:
+        indice.reset_collection()  # se limpia para no duplicar al re-indexar
+    except Exception:
+        pass
+
+    for inicio_lote in range(0, total, tam_lote):
+        indice.add_documents(documentos[inicio_lote:inicio_lote + tam_lote])
+        print(f"  indexados {min(inicio_lote + tam_lote, total)}/{total}")
+
+    print(f"Listo en {time.time() - inicio:.1f} s. Índice guardado en {config.DIR_CHROMA}")
+    return indice
+
+
+def cargar_indice(coleccion: str) -> Chroma:
+    """Reabre una colección de Chroma ya guardada (``dataset`` o ``papers``)."""
+    return Chroma(
+        collection_name=coleccion,
+        embedding_function=crear_embeddings(),
+        persist_directory=str(config.DIR_CHROMA),
+    )
