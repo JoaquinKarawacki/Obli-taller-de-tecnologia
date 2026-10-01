@@ -45,9 +45,9 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [ ] Responde preguntas sobre la temática elegida (ej.: películas, libros, recetas…).
 
 ### 2.4 Conocimiento sobre documentos (papers)
-- [ ] Chunking de documentos largos.
-- [ ] Embeddings de los fragmentos → base vectorial (Chroma).
-- [ ] Recupera los fragmentos más relevantes con búsqueda semántica.
+- [x] Chunking de documentos largos.
+- [x] Embeddings de los fragmentos → base vectorial (Chroma).
+- [x] Recupera los fragmentos más relevantes con búsqueda semántica.
 - [ ] Responde preguntas sobre cualquiera de los documentos usando el LLM.
 
 ### 2.5 Técnicas comunes
@@ -92,26 +92,26 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 ## 4. Fases del trabajo
 
 ### Fase 0 — Setup del proyecto
-- [ ] Repo + rama `develop`.
-- [ ] Entorno virtual + `requirements.txt`.
-- [ ] `.env.example` y `.gitignore` (excluir `.env`, `data/`, `chroma_db/`).
-- [ ] Estructura de carpetas.
+- [x] Repo + rama `develop`.
+- [x] Entorno virtual + `requirements.txt`.
+- [x] `.env.example` y `.gitignore` (excluir `.env`, `data/`, `chroma_db/`).
+- [x] Estructura de carpetas.
 
 ### Fase 1 — Datos
-- [ ] Elegir dataset de Kaggle (temática + idioma).
-- [ ] Descargar y explorar (EDA con pandas): columnas, tamaño, calidad.
-- [ ] Conseguir 1–3 papers para la parte de documentos.
+- [x] Elegir dataset de Kaggle (temática + idioma).
+- [x] Descargar y explorar (EDA con pandas): columnas, tamaño, calidad.
+- [x] Papers: los 6 PDFs que da la materia ("Obligatorio setiembre 2026 - Papers"), copiados a `data/papers/`.
 
 ### Fase 2 — Ingesta y embeddings
 - [x] Preprocesar dataset (muestra balanceada de 10k por indicación del profe).
 - [x] Chunking (RecursiveCharacterTextSplitter, 800/100).
 - [x] Generar embeddings (e5 multilingüe) y poblar Chroma (colección `dataset`), indexado por lotes.
-- [ ] Poblar la colección `papers` (fase posterior).
+- [x] Poblar la colección `papers` (`construir_indice_papers`, texto por página con pypdf, metadatos título + página).
 
 ### Fase 3 — Retrieval (RAG)
-- [ ] Función de búsqueda semántica (top-k) sobre cada colección.
-- [ ] Envolver el retrieval como **tool** del agente.
-- [ ] Prueba manual de calidad de recuperación.
+- [x] Función de búsqueda semántica (top-k) sobre cada colección, con umbral de relevancia.
+- [x] Envolver el retrieval como **tool** del agente (`buscar_en_papers`, `buscar_en_dataset`, `listar_papers`, `estadisticas_dataset`).
+- [x] Prueba manual de calidad de recuperación (`scripts/probar_recuperacion.py`; papers OK, dataset pendiente de tener el índice local).
 
 ### Fase 4 — Agente (LangGraph)
 - [ ] Definir el estado del grafo.
@@ -164,7 +164,10 @@ Obli-taller-de-tecnologia/
 │   ├── memoria.py             # Fase 5: memoria corto/largo plazo
 │   └── chatbot.py             # Fase 6: loop de conversación
 ├── scripts/
-│   └── consolidar_dataset.py  # genera data/dataset_consolidado.csv
+│   ├── consolidar_dataset.py  # genera data/dataset_consolidado.csv
+│   ├── construir_indice.py    # índice del dataset (colección dataset)
+│   ├── construir_indice_papers.py  # índice de los papers (colección papers)
+│   └── probar_recuperacion.py # calibración del umbral de relevancia
 ├── data/                      # dataset + papers (no se commitea)
 └── chroma_db/                 # base vectorial persistida (no se commitea)
 ```
@@ -220,4 +223,4 @@ develop ─────●────●────●──────●─
 - [x] **Dataset / temática:** `naserabdullahalam/phishing-email-dataset` — Phishing Email Dataset (ciberseguridad, **inglés**).
 - [x] **Enfoque multilingüe:** datos en inglés, chatbot en **ES + EN** (LLM y embeddings multilingües → retrieval cross-lingual).
 - [ ] Integrantes del grupo y números de estudiante.
-- [ ] Papers a usar en la parte de documentos.
+- [x] Papers: los 6 de la materia (Attention, GPT, GPT-3, Scaling Laws, Subliminal Learning, Designing Data-Intensive Applications).
