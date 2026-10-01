@@ -70,7 +70,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 | Lenguaje | **Python 3.11+** | |
 | Entorno | `venv` + `requirements.txt`, `.env` para claves | No commitear claves |
 | Orquestación del agente | **LangGraph** (grafo manual) | Sin `create_react_agent` |
-| LLM | **Groq** (`llama-3.3-70b-versatile`) | Gratis y rápido, buen tool calling. vía `langchain-groq`. Necesita API key gratuita |
+| LLM | **Groq** (`qwen/qwen3.8-27b`; Llama 3.3 fue retirado de Groq) | Gratis y rápido, buen tool calling. vía `langchain-groq`. Necesita API key gratuita |
 | Embeddings | **`sentence-transformers` multilingüe** (`intfloat/multilingual-e5-small`) | Locales, gratis, buenos para español. Opcional: comparar con otro modelo |
 | Base vectorial | **ChromaDB** (persistente en disco) | Colecciones separadas: `dataset` y `papers` |
 | Manejo de datos | **pandas** | EDA + carga del dataset |

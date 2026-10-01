@@ -10,7 +10,7 @@ vectorial, agentes con *tool calling* y memoria a corto y largo plazo.
 
 - **Python 3.11+**
 - **LangGraph** — orquestación del agente (grafo armado a mano)
-- **Groq** (`llama-3.3-70b-versatile`) — LLM, gratis
+- **Groq** (`qwen/qwen3.8-27b`) — LLM, gratis
 - **sentence-transformers** (`multilingual-e5-small`) — embeddings locales, en español
 - **ChromaDB** — base vectorial persistente
 - **Gradio** — interfaz de chat (demo)

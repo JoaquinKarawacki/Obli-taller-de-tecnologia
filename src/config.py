@@ -30,7 +30,7 @@ COLUMNAS_RELEVANTES = ["fuente", "sender", "subject", "body", "urls", "label"]
 CSV_CONSOLIDADO = DIR_DATOS / "dataset_consolidado.csv"
 
 # --- Modelos ---
-MODELO_LLM = "llama-3.3-70b-versatile"          # Groq (gratis, multilingüe)
+MODELO_LLM = "qwen/qwen3.8-27b"                 # Groq (gratis, multilingüe, buen tool calling)
 MODELO_EMBEDDINGS = "intfloat/multilingual-e5-small"  # embeddings locales multilingües
 
 # El modelo e5 requiere prefijos: "passage: " para documentos y "query: " para consultas.

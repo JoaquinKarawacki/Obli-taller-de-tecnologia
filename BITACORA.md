@@ -95,6 +95,11 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - Pregunta con contexto vs. sin contexto (Parte 1): queda para el notebook demo (necesita el LLM).
 - **Nota:** `PyPDFLoader` y `LongContextReorder` vienen de `langchain-community`, que LangChain marcó como *sunset* (sin mantenimiento activo). Funciona; si en el futuro se rompe, ambos son triviales de reemplazar (`pypdf` directo y un reordenamiento de 5 líneas).
 
+### 2026-10-01 — LLM: cambio a Qwen 3.8 27B (Groq)
+- **Decisión:** usar `qwen/qwen3.8-27b` vía Groq. Se mantiene Groq como único proveedor (sin alternativa, por simplicidad).
+- **Motivo:** `llama-3.3-70b-versatile` **ya no existe en Groq** (error 404 `model_not_found`). Modelos de chat disponibles: `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`.
+- **Prueba de tool calling** con las tools del proyecto y preguntas en español: ambos candidatos eligieron bien la tool (papers / estadísticas) y respondieron el small-talk sin buscar; `gpt-oss-120b` le pasó un argumento inventado a una tool sin parámetros, Qwen no cometió errores → se elige Qwen.
+
 ### 2026-10-01 — Chroma (local) en vez de Pinecone
 - **Decisión:** mantener **ChromaDB local** aunque el Lab03 use Pinecone.
 - **Motivo:** no requiere cuenta ni API key (los docentes pueden correrlo sin nuestras credenciales), funciona sin internet (la defensa no depende de la red ni de la cuota del plan gratuito de Pinecone) y el índice persiste en una carpeta (`chroma_db/`, ~26 MB con los papers) que puede reutilizarse sin reindexar. La letra admite cualquiera ("Pinecone, Qdrant, Chroma, FAISS").
