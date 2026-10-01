@@ -128,6 +128,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 
 ### Fase 6 — Chatbot y pruebas
 - [ ] Loop de chat en el notebook.
+- [ ] Demo "con contexto vs sin contexto" (Parte 1 del Lab03) para mostrar el aporte del RAG.
 - [ ] Batería de preguntas variadas (dataset, papers, general, small-talk, "no sé").
 - [ ] Registrar resultados y ajustar prompts.
 
@@ -137,8 +138,8 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [ ] Citar uso de IA generativa.
 
 ### Fase 8 — Opcionales (si da el tiempo)
-- [ ] Comparar modelos de embeddings.
-- [ ] Comparar estrategias de chunking/recuperación.
+- [x] Comparar modelos de embeddings (MiniLM del Lab03 vs e5 multilingüe, `scripts/experimento_chunking_embeddings.py`).
+- [x] Comparar estrategias de chunking/recuperación (250/600/1200 del Lab03 + 800 del proyecto; acierto@4 y MRR).
 - [ ] Comparar LLMs.
 - [ ] API (FastAPI) o interfaz (Gradio).
 
@@ -167,7 +168,8 @@ Obli-taller-de-tecnologia/
 │   ├── consolidar_dataset.py  # genera data/dataset_consolidado.csv
 │   ├── construir_indice.py    # índice del dataset (colección dataset)
 │   ├── construir_indice_papers.py  # índice de los papers (colección papers)
-│   └── probar_recuperacion.py # calibración del umbral de relevancia
+│   ├── probar_recuperacion.py # calibración del umbral de relevancia
+│   └── experimento_chunking_embeddings.py  # opcional: chunking × embeddings
 ├── data/                      # dataset + papers (no se commitea)
 └── chroma_db/                 # base vectorial persistida (no se commitea)
 ```

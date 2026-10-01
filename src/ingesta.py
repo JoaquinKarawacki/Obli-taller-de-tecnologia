@@ -25,8 +25,8 @@ from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
-from pypdf import PdfReader
 from langchain_chroma import Chroma
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -207,24 +207,27 @@ def cargar_indice_dataset() -> Chroma:
 # ---------------------------------------------------------------------------
 # Papers (documentos largos en PDF)
 # ---------------------------------------------------------------------------
-# Mismo proceso que con los correos, pero la fuente son PDFs:
+# Mismo proceso que con los correos, pero la fuente son PDFs. Sigue el pipeline
+# del Lab03 (RAG Pipeline):
 #
-#     PDF -> texto de cada página -> fragmentos (chunking) -> embeddings -> Chroma
+#     PyPDFLoader (un Document por página) -> normalizar texto -> split_documents
+#       -> filtrar fragmentos inútiles -> embeddings -> Chroma
 #
-# Se trabaja página por página para poder guardar el número de página como
-# metadato: así el chatbot puede citar "según <paper>, pág. N".
+# Al cargar por página, cada fragmento hereda su número de página: así el chatbot
+# puede citar "según <paper>, pág. N".
 
 
-def _limpiar_texto_pdf(texto: str) -> str:
-    """Arregla los defectos típicos del texto extraído de un PDF.
+def normalizar_texto(texto: str) -> str:
+    """Preprocesamiento mínimo del texto (``normalize_text`` del Lab03).
 
-    - Une las palabras cortadas con guion al final de línea ("trans-\\nformer").
-    - Convierte los saltos de línea simples en espacios (en el PDF cortan la
-      oración a la mitad) y colapsa los espacios repetidos.
+    Como dice el lab, se mantiene mínimo para preservar la semántica: los
+    embeddings modernos funcionan mejor sin lematizar ni quitar stopwords.
+    - Une las palabras cortadas con guion al final de línea ("trans-\\nformer"),
+      agregado para los PDFs.
+    - Normaliza los espacios (los saltos de línea del PDF cortan las oraciones).
     """
     texto = re.sub(r"-\n(\w)", r"\1", texto)
-    texto = re.sub(r"\s+", " ", texto)
-    return texto.strip()
+    return re.sub(r"\s+", " ", texto).strip()
 
 
 def es_fragmento_util(texto: str) -> bool:
@@ -242,19 +245,18 @@ def es_fragmento_util(texto: str) -> bool:
 def _paper_a_documentos(ruta_pdf: Path, separador) -> list[Document]:
     """Convierte un PDF en fragmentos (Document) con título y página."""
     titulo = config.TITULOS_PAPERS.get(ruta_pdf.name, ruta_pdf.stem)
-    lector = PdfReader(ruta_pdf)
 
-    documentos: list[Document] = []
-    for numero, pagina in enumerate(lector.pages, start=1):
-        texto = _limpiar_texto_pdf(pagina.extract_text() or "")
-        if len(texto) < 50:
-            continue  # páginas en blanco, solo imágenes o casi vacías
+    # Lab03: PyPDFLoader devuelve un Document por página (metadata "page" desde 0).
+    paginas = PyPDFLoader(str(ruta_pdf)).load()
+    for pagina in paginas:
+        pagina.page_content = normalizar_texto(pagina.page_content)
+        pagina.metadata = {"titulo": titulo, "archivo": ruta_pdf.name, "pagina": pagina.metadata["page"] + 1}
+    # Páginas en blanco, solo imágenes o casi vacías no aportan nada.
+    paginas = [pagina for pagina in paginas if len(pagina.page_content) >= 50]
 
-        metadatos = {"titulo": titulo, "archivo": ruta_pdf.name, "pagina": numero}
-        for fragmento in separador.split_text(texto):
-            if es_fragmento_util(fragmento):
-                documentos.append(Document(page_content=fragmento, metadata=metadatos))
-    return documentos
+    # Lab03: split_documents conserva la metadata de la página en cada fragmento.
+    fragmentos = separador.split_documents(paginas)
+    return [fragmento for fragmento in fragmentos if es_fragmento_util(fragmento.page_content)]
 
 
 def construir_indice_papers(rutas_pdf: list[Path] | None = None, tam_lote: int = 500) -> Chroma:
