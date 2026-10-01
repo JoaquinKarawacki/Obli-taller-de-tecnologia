@@ -46,6 +46,7 @@ python -m scripts.construir_indice          # dataset (~10k correos)
 # copiar los PDFs de "Obligatorio setiembre 2026 - Papers" a data/papers/
 python -m scripts.construir_indice_papers   # papers (~9 min en CPU)
 python -m scripts.probar_recuperacion       # (opcional) probar búsqueda y umbral
+python -m scripts.experimento_chunking_embeddings  # (opcional) comparar chunking × embeddings
 
 # 6. Ejecutar
 python main.py
@@ -71,7 +72,8 @@ python main.py
 │   ├── consolidar_dataset.py
 │   ├── construir_indice.py
 │   ├── construir_indice_papers.py
-│   └── probar_recuperacion.py
+│   ├── probar_recuperacion.py
+│   └── experimento_chunking_embeddings.py
 ├── data/                # dataset + papers (no se commitea)
 └── chroma_db/           # base vectorial persistida (no se commitea)
 ```

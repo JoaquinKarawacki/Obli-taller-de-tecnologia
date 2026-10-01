@@ -4,16 +4,18 @@ Búsqueda semántica top-k sobre las colecciones de Chroma, expuesta como
 herramientas (tools) para que el agente decida cuándo y dónde buscar.
 
 Es el mismo pipeline del Demo_vectoriales_crawler (``search`` + ``format_message``)
-con dos agregados:
+y del Lab03 (retriever + filtros de metadata + LongContextReorder), con agregados:
   - un UMBRAL de relevancia: si ningún fragmento es suficientemente parecido a la
     consulta, se devuelve "SIN EVIDENCIA" en vez de fragmentos irrelevantes. Así el
     agente sabe que debe admitir que no tiene información (control de alucinaciones).
-  - metadatos para citar la fuente (paper + página, o corpus + etiqueta del correo).
+  - metadatos reales para citar la fuente y filtrar (paper + página, o corpus +
+    etiqueta del correo); en el Lab03 la metadata era sintética.
 """
 import difflib
 from functools import lru_cache
 
 from langchain_chroma import Chroma
+from langchain_community.document_transformers import LongContextReorder
 from langchain_core.documents import Document
 from langchain_core.tools import tool
 
@@ -60,13 +62,25 @@ def formatear_fragmentos(resultados: list[tuple[Document, float]]) -> str:
     """Arma el bloque de contexto que se le pasa al LLM (como ``format_message``).
 
     Cada fragmento va numerado y con su fuente, para que la respuesta pueda citarla.
+
+    Antes se aplica ``LongContextReorder`` (Lab03, problema "Lost in the Middle"):
+    el LLM presta más atención al inicio y al final del contexto, así que los
+    fragmentos más relevantes se ubican en los extremos y los menos, al medio.
     """
     if not resultados:
         return f"{SIN_EVIDENCIA}: no se encontraron fragmentos relevantes para esta consulta."
 
+    # El puntaje viaja en la metadata para no perderlo al reordenar.
+    documentos = [
+        Document(page_content=doc.page_content, metadata={**doc.metadata, "relevancia": puntaje})
+        for doc, puntaje in resultados
+    ]
+    documentos = LongContextReorder().transform_documents(documentos)
+
     bloques = []
-    for i, (doc, puntaje) in enumerate(resultados, 1):
+    for i, doc in enumerate(documentos, 1):
         meta = doc.metadata
+        puntaje = meta["relevancia"]
         if "titulo" in meta:  # fragmento de un paper
             fuente = f"{meta['titulo']}, pág. {meta['pagina']}"
         else:                 # fragmento de un correo del dataset
