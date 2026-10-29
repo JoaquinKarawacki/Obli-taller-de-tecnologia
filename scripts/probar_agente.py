@@ -7,6 +7,9 @@ respuesta final. Sirve para verificar que decide bien según el tipo de consulta
 Uso (desde la raíz del repo, con el venv):
     python -m scripts.probar_agente
 """
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
+
 from src.agente import construir_agente
 
 CONSULTAS_PRUEBA = [
@@ -30,9 +33,12 @@ def herramientas_usadas(mensajes) -> list[str]:
 
 
 if __name__ == "__main__":
-    agente = construir_agente()
-    for consulta in CONSULTAS_PRUEBA:
-        resultado = agente.invoke({"messages": [("user", consulta)]})
+    # Memoria en RAM (no toca memoria.sqlite3) y una conversación nueva por
+    # consulta: cada pregunta se prueba sola, sin contexto de las anteriores.
+    agente = construir_agente(InMemorySaver(), InMemoryStore())
+    for i, consulta in enumerate(CONSULTAS_PRUEBA):
+        sesion = {"configurable": {"thread_id": f"prueba-{i}", "user_id": "prueba"}}
+        resultado = agente.invoke({"messages": [("user", consulta)]}, sesion)
         print(f"\n=== {consulta}")
         print(f"Herramientas: {herramientas_usadas(resultado['messages']) or 'ninguna'}")
         print(f"Respuesta: {resultado['messages'][-1].content}")
