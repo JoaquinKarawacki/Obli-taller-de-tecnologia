@@ -175,7 +175,7 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - ejemplo de phishing bancario → `buscar_en_dataset` dos veces (reformula en inglés); admite que no hay uno que pida *explícitamente* la contraseña del banco y muestra los más cercanos ✔
   - "capital de Francia" → sin tools, conocimiento general ✔ (no aclaró que no sale de los documentos; ajuste menor de prompt pendiente)
   - "¿Qué dice Attention sobre el mundial 2022?" → busca y admite que no tiene información ✔
-- **Índice del dataset:** se lanzó la construcción local (`python -m scripts.construir_indice`): 33.792 fragmentos de la muestra de 10k correos. Con embeddings en CPU tarda bastante (~1 h); la búsqueda funciona aunque esté a medias, con los fragmentos ya indexados.
+- **Índice del dataset** construido localmente (`python -m scripts.construir_indice`): 33.792 fragmentos de la muestra de 10k correos, 26 min con embeddings en CPU. Búsqueda cross-lingual OK ("reunión de trabajo" → correos de meetings de Enron; "pide contraseña" → phishing "Your Password Has Expired"). Batería del agente re-corrida completa sin errores.
 
 - **Fase 5 (memoria):** `src/memoria.py` + agente actualizado. `scripts/probar_memoria.py` verifica:
   - Ana se presenta → el agente guarda "Se llama Ana y trabaja en el área de seguridad informática de un banco" ✔
@@ -198,7 +198,7 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 | Sin el índice del dataset construido, Chroma crea una colección vacía y la búsqueda decía "sin evidencia", lo que el agente interpretaría como "no hay correos así". | La búsqueda detecta la colección vacía y la tool devuelve un `ERROR` explícito. |
 | El plan gratuito de Groq corta con error 429 (1000 tokens de salida/min para Qwen) y Qwen 3 gasta tokens "pensando" antes de responder. | `reasoning_effort="none"`, `max_retries=6` (espera y reintenta) y respuestas concisas por prompt. |
 | SQLite: `database is locked` / `cannot start a transaction within a transaction` al usar checkpointer y store sobre el mismo archivo. | Conexión en modo autocommit (`isolation_level=None`, como hace `SqliteStore.from_conn_string`): cada uno maneja sus propias transacciones. |
-| Buscar en la colección `dataset` mientras el índice se está construyendo en otro proceso da `chromadb InternalError: Error finding id`. | Es concurrencia de escritura/lectura de Chroma, no del agente: el índice se construye una sola vez antes de usar el chatbot. |
+| Buscar en la colección `dataset` mientras el índice se está construyendo en otro proceso da `chromadb InternalError: Error finding id`. | Es concurrencia de escritura/lectura de Chroma, no del agente: con el índice terminado la batería corre sin errores. El índice se construye una sola vez antes de usar el chatbot. |
 
 ---
 
