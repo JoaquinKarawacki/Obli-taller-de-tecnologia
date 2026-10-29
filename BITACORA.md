@@ -117,6 +117,17 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Decisión:** `reasoning_effort="none"` (sin razonamiento), `max_retries=6` (el cliente de Groq espera lo que indica la API y reintenta) y pedir respuestas concisas en el prompt. Con eso la batería completa corre sin errores y la elección de tools sigue siendo correcta.
 - **Alternativa descartada:** otro proveedor o un LLM de respaldo (decisión del equipo: solo Groq, simple).
 
+### 2026-10-29 — Fase 5: memoria en SQLite (checkpointer + store) y tool `guardar_recuerdo`
+- **Corto plazo:** `SqliteSaver` (checkpointer de LangGraph). Guarda el estado de cada conversación por `thread_id` después de cada paso. Mismo `thread_id` → se retoma donde quedó; otro → conversación nueva e independiente.
+- **Largo plazo:** `SqliteStore` (store de LangGraph), namespace `("usuarios", user_id, "recuerdos")`. Compartido entre todas las conversaciones del usuario.
+- **Qué guardar lo decide el agente:** tool `guardar_recuerdo(recuerdo)`. El prompt le indica guardar datos duraderos del usuario (nombre, trabajo, intereses, preferencias, nivel), uno por llamada, sin repetir y nunca datos sensibles.
+- **Cuándo usarlo:** en cada turno el nodo `agente` lee los recuerdos del usuario y los agrega al prompt de sistema. Son pocos por usuario, así que se pasan todos (no hace falta búsqueda semántica sobre la memoria).
+- **Seguridad entre usuarios:** `user_id` y `store` son argumentos `InjectedToolArg`: el LLM no los ve ni los completa, los agrega el nodo `herramientas` desde el config de la sesión. Así un usuario no puede escribir en la memoria de otro.
+- **Sesiones en paralelo:** cada invocación lleva `{"configurable": {"thread_id", "user_id"}}`; probado con dos usuarios en hilos simultáneos.
+- **Por qué SQLite y no `MemorySaver`/`InMemoryStore`:** la letra pide "pausar y retomar sin pérdida de contexto"; en RAM se pierde todo al cerrar el programa. SQLite es un archivo local (`memoria.sqlite3`, no se commitea), sin servidor, y viene como paquete oficial de LangGraph (`langgraph-checkpoint-sqlite`).
+- **`construir_agente(checkpointer, store)`** ahora los pide obligatorios: un solo camino de código. Las pruebas que no deben ensuciar la memoria (`probar_agente.py`) pasan las versiones en RAM.
+- **Mejora posible (no implementada):** recortar el historial de conversaciones muy largas (hoy se manda completo al LLM).
+
 ---
 
 ## Temática / dataset — DECIDIDO
@@ -166,6 +177,13 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - "¿Qué dice Attention sobre el mundial 2022?" → busca y admite que no tiene información ✔
 - **Índice del dataset:** se lanzó la construcción local (`python -m scripts.construir_indice`): 33.792 fragmentos de la muestra de 10k correos. Con embeddings en CPU tarda bastante (~1 h); la búsqueda funciona aunque esté a medias, con los fragmentos ya indexados.
 
+- **Fase 5 (memoria):** `src/memoria.py` + agente actualizado. `scripts/probar_memoria.py` verifica:
+  - Ana se presenta → el agente guarda "Se llama Ana y trabaja en el área de seguridad informática de un banco" ✔
+  - conversación nueva de Ana → recuerda nombre y trabajo (largo plazo) pero no lo que preguntó en la otra (conversaciones independientes) ✔
+  - se recrea el agente (simula reiniciar el programa) y Ana retoma la conversación 1 → recuerda que preguntó por multi-head attention (corto plazo persistido) ✔
+  - Ana y Beto en paralelo → Beto no sabe nada de Ana y viceversa ✔
+- Ajuste de prompt: en preguntas generales ahora aclara "esto es conocimiento general, no sale de los documentos cargados" ✔
+
 ---
 
 ## Desafíos y soluciones
@@ -179,6 +197,8 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 | Las **bibliografías** de los papers también atraen consultas ajenas ("mundial de fútbol 2022" → referencias de GPT-3 con relevancia 0.69, apenas sobre el umbral). | **No se filtran** (decisión consciente): una heurística por años/"et al."/"arXiv" también marcaba párrafos con contenido real. Se cubre con las otras capas (router + prompt del generador que verifica que el fragmento responda). Queda como mejora posible. |
 | Sin el índice del dataset construido, Chroma crea una colección vacía y la búsqueda decía "sin evidencia", lo que el agente interpretaría como "no hay correos así". | La búsqueda detecta la colección vacía y la tool devuelve un `ERROR` explícito. |
 | El plan gratuito de Groq corta con error 429 (1000 tokens de salida/min para Qwen) y Qwen 3 gasta tokens "pensando" antes de responder. | `reasoning_effort="none"`, `max_retries=6` (espera y reintenta) y respuestas concisas por prompt. |
+| SQLite: `database is locked` / `cannot start a transaction within a transaction` al usar checkpointer y store sobre el mismo archivo. | Conexión en modo autocommit (`isolation_level=None`, como hace `SqliteStore.from_conn_string`): cada uno maneja sus propias transacciones. |
+| Buscar en la colección `dataset` mientras el índice se está construyendo en otro proceso da `chromadb InternalError: Error finding id`. | Es concurrencia de escritura/lectura de Chroma, no del agente: el índice se construye una sola vez antes de usar el chatbot. |
 
 ---
 
@@ -193,6 +213,7 @@ Técnicas usadas:
 - **Control de alucinaciones**: responder solo con los fragmentos; ante `SIN EVIDENCIA` o fragmentos que no responden, decir que no hay información; ante `ERROR`, avisar; citar fuente (paper + página o corpus).
 - **Idioma espejo**: responder en el idioma del usuario aunque los documentos estén en inglés.
 - **Concisión** (también por el límite de tokens de Groq).
+- **Memoria guiada por reglas**: qué guardar (datos duraderos del usuario), qué no (preguntas puntuales, datos sensibles) y para qué usarlo (personalizar). Los recuerdos se inyectan al final del prompt en cada turno.
 
 ---
 

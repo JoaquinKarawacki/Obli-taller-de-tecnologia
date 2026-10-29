@@ -79,5 +79,9 @@ UMBRAL_RELEVANCIA = 0.68
 COLECCION_DATASET = "dataset"   # correos del dataset de phishing
 COLECCION_PAPERS = "papers"     # documentos largos (papers)
 
+# --- Memoria (Fase 5) ---
+# Conversaciones (corto plazo) y recuerdos de cada usuario (largo plazo), en SQLite.
+ARCHIVO_MEMORIA = RAIZ / "memoria.sqlite3"
+
 # --- Credenciales ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")

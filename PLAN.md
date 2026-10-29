@@ -24,17 +24,17 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 ## 2. Requisitos obligatorios (checklist)
 
 ### 2.1 Agentic RAG (núcleo)
-- [ ] Recibe consultas del usuario.
-- [ ] Recupera fragmentos relevantes de la base vectorial con **búsqueda semántica**.
-- [ ] Decide cómo combinar la información y generar la respuesta.
-- [ ] **Memoria a corto plazo** dentro de la misma conversación.
-- [ ] **Múltiples conversaciones independientes**, con pausar/retomar sin pérdida de contexto.
-- [ ] **Memoria a largo plazo** compartida entre conversaciones (info del usuario).
-- [ ] El sistema **decide qué guardar en memoria y cuándo usarlo** según el contexto.
-- [ ] Maneja distintos tipos de consulta: **preguntas sobre documentos / consultas generales / small-talk**, decidiendo dinámicamente.
-- [ ] **Evita alucinar**: admite explícitamente cuando no tiene información suficiente.
-- [ ] **Múltiples sesiones de usuario en paralelo**, identificadas de forma única.
-- [ ] Integra **tool calling** (consulta a BD vectorial, funciones, APIs externas).
+- [x] Recibe consultas del usuario.
+- [x] Recupera fragmentos relevantes de la base vectorial con **búsqueda semántica**.
+- [x] Decide cómo combinar la información y generar la respuesta.
+- [x] **Memoria a corto plazo** dentro de la misma conversación.
+- [x] **Múltiples conversaciones independientes**, con pausar/retomar sin pérdida de contexto.
+- [x] **Memoria a largo plazo** compartida entre conversaciones (info del usuario).
+- [x] El sistema **decide qué guardar en memoria y cuándo usarlo** según el contexto.
+- [x] Maneja distintos tipos de consulta: **preguntas sobre documentos / consultas generales / small-talk**, decidiendo dinámicamente.
+- [x] **Evita alucinar**: admite explícitamente cuando no tiene información suficiente.
+- [x] **Múltiples sesiones de usuario en paralelo**, identificadas de forma única.
+- [x] Integra **tool calling** (consulta a BD vectorial y funciones; sin API externa por ahora: la letra las da como ejemplos).
 
 ### 2.2 Restricciones técnicas
 - [ ] Implementado en **Python**.
@@ -76,8 +76,8 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 | Manejo de datos | **pandas** | EDA + carga del dataset |
 | Chunking | `langchain-text-splitters` (`RecursiveCharacterTextSplitter`) | Probar tamaños/overlap |
 | Lectura de PDFs | **pypdf** / PyMuPDF (`fitz`) | Para los papers |
-| Memoria corto plazo | **Checkpointer de LangGraph** (`MemorySaver` → luego `SqliteSaver`) | Aislada por `thread_id` |
-| Memoria largo plazo | **Store de LangGraph** (`InMemoryStore` → persistente) | Compartida entre conversaciones, por `user_id` |
+| Memoria corto plazo | **Checkpointer de LangGraph** (`SqliteSaver`) | Aislada por `thread_id`, persistida en `memoria.sqlite3` |
+| Memoria largo plazo | **Store de LangGraph** (`SqliteStore`) | Compartida entre conversaciones, por `user_id` |
 | Sesiones paralelas | `thread_id` (conversación) + `user_id` (usuario) | |
 | Entregable | **Módulos `.py`** (+ notebook demo opcional al cierre) | Decisión del equipo: más modular y legible |
 | Interfaz (demo) | **Gradio** | UI de chat para la defensa (opcional que suma) |
@@ -122,10 +122,11 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [x] Batería de prueba: `scripts/probar_agente.py`.
 
 ### Fase 5 — Memoria y sesiones
-- [ ] Memoria corto plazo por `thread_id` (checkpointer).
-- [ ] Múltiples conversaciones: pausar/retomar.
-- [ ] Memoria largo plazo (store) por `user_id`: decidir qué guardar y cuándo usar.
-- [ ] Sesiones de usuario en paralelo con IDs únicos.
+- [x] Memoria corto plazo por `thread_id` (checkpointer `SqliteSaver`).
+- [x] Múltiples conversaciones: pausar/retomar (persistido en `memoria.sqlite3`, sobrevive a reiniciar el programa).
+- [x] Memoria largo plazo (`SqliteStore`) por `user_id`: el agente decide qué guardar (tool `guardar_recuerdo`) y los recuerdos se agregan al prompt en cada turno.
+- [x] Sesiones de usuario en paralelo con IDs únicos (`user_id` + `thread_id` en el config).
+- [x] Prueba: `scripts/probar_memoria.py`.
 
 ### Fase 6 — Chatbot y pruebas
 - [ ] Loop de chat en el notebook.
@@ -170,9 +171,11 @@ Obli-taller-de-tecnologia/
 │   ├── construir_indice.py    # índice del dataset (colección dataset)
 │   ├── construir_indice_papers.py  # índice de los papers (colección papers)
 │   ├── probar_recuperacion.py # calibración del umbral de relevancia
-│   └── probar_agente.py       # batería de consultas al agente
+│   ├── probar_agente.py       # batería de consultas al agente
+│   └── probar_memoria.py      # memoria corto/largo plazo y sesiones en paralelo
 ├── data/                      # dataset + papers (no se commitea)
-└── chroma_db/                 # base vectorial persistida (no se commitea)
+├── chroma_db/                 # base vectorial persistida (no se commitea)
+└── memoria.sqlite3            # conversaciones y recuerdos de usuarios (no se commitea)
 ```
 
 ---

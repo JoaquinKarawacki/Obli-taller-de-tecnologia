@@ -2,6 +2,7 @@
 langgraph
 langchain
 langchain-core
+langgraph-checkpoint-sqlite   # memoria persistente (SqliteSaver + SqliteStore)
 
 # --- LLM (Groq, gratis) ---
 langchain-groq
