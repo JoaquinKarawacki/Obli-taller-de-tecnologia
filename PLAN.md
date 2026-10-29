@@ -114,11 +114,12 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [x] Prueba manual de calidad de recuperación (`scripts/probar_recuperacion.py`; papers OK, dataset pendiente de tener el índice local).
 
 ### Fase 4 — Agente (LangGraph)
-- [ ] Definir el estado del grafo.
-- [ ] Nodo router: clasifica consulta (documentos / general / small-talk).
-- [ ] Nodo(s) de tools (retrieval, otras funciones).
-- [ ] Nodo de generación con control de alucinaciones ("no sé si no hay evidencia").
-- [ ] Cablear el grafo a mano (nodos + edges condicionales).
+- [x] Definir el estado del grafo (`MessagesState`).
+- [x] Decisión del tipo de consulta (documentos / general / small-talk): la toma el nodo `agente` (LLM + prompt), sin router aparte (ver BITACORA 2026-10-29).
+- [x] Nodo de tools escrito a mano (`herramientas`, sin `ToolNode`).
+- [x] Control de alucinaciones en el prompt de sistema ("no sé si no hay evidencia").
+- [x] Cablear el grafo a mano (nodos + edge condicional `decidir_siguiente`).
+- [x] Batería de prueba: `scripts/probar_agente.py`.
 
 ### Fase 5 — Memoria y sesiones
 - [ ] Memoria corto plazo por `thread_id` (checkpointer).
@@ -168,7 +169,8 @@ Obli-taller-de-tecnologia/
 │   ├── consolidar_dataset.py  # genera data/dataset_consolidado.csv
 │   ├── construir_indice.py    # índice del dataset (colección dataset)
 │   ├── construir_indice_papers.py  # índice de los papers (colección papers)
-│   └── probar_recuperacion.py # calibración del umbral de relevancia
+│   ├── probar_recuperacion.py # calibración del umbral de relevancia
+│   └── probar_agente.py       # batería de consultas al agente
 ├── data/                      # dataset + papers (no se commitea)
 └── chroma_db/                 # base vectorial persistida (no se commitea)
 ```
