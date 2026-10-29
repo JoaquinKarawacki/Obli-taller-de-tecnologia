@@ -104,6 +104,19 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Motivo:** no requiere cuenta ni API key (los docentes pueden correrlo sin nuestras credenciales), funciona sin internet (la defensa no depende de la red ni de la cuota del plan gratuito de Pinecone) y el índice persiste en una carpeta (`chroma_db/`, ~26 MB con los papers) que puede reutilizarse sin reindexar. La letra admite cualquiera ("Pinecone, Qdrant, Chroma, FAISS").
 - **Alternativa descartada:** Pinecone — su ventaja (índice en la nube, sin reindexar) se cubre guardando `chroma_db/`.
 
+### 2026-10-29 — Fase 4: grafo del agente (loop agente ↔ herramientas, escrito a mano)
+- **Decisión:** grafo de 2 nodos, `agente` (LLM con las tools bindeadas) y `herramientas` (ejecuta las tools pedidas), con un edge condicional `decidir_siguiente`: si el LLM pidió tools va a `herramientas` y vuelve al `agente`; si no, termina. Es el patrón ReAct, pero armado a mano como en la Parte 3/4 del Lab04.
+- **Motivo:** la letra prohíbe `create_react_agent()` y abstracciones que oculten la lógica. Lo que sí pide es que el agente decida dinámicamente el tipo de consulta y use tool calling: este loop lo cumple con la menor cantidad de piezas, y cada una se puede explicar en la defensa.
+- **Sin `ToolNode` ni `tools_condition`** (los usa el Lab04): vienen de `langgraph.prebuilt`, el mismo módulo que `create_react_agent`. Escribirlos a mano son ~10 líneas y evita la discusión de si cuentan como "abstracción de alto nivel".
+- **Sin nodo router aparte:** el propio LLM decide (guiado por el prompt de sistema) si responde directo (small-talk, preguntas generales) o llama a tools (papers, dataset). Donde antes en esta bitácora se habla del "router", ese rol lo cumple el nodo `agente`. Un router con una llamada extra al LLM duplicaría el consumo de tokens (ver límite de Groq abajo) sin aportar a lo que pide la letra.
+- **Prompt de sistema** fuera del estado: se antepone en cada llamada al LLM, así no se repite en el historial que guardará la memoria (Fase 5).
+- **`construir_agente(checkpointer, store)`** ya recibe la memoria como parámetro, para enchufar la Fase 5 sin tocar el grafo.
+
+### 2026-10-29 — LLM: sin razonamiento + reintentos (límite de Groq)
+- **Problema:** el plan gratuito de Groq limita `qwen/qwen3.8-27b` a **1000 tokens de salida por minuto**; la batería de pruebas cortó con error 429. Qwen 3 además "piensa" antes de responder y esos tokens cuentan para el límite.
+- **Decisión:** `reasoning_effort="none"` (sin razonamiento), `max_retries=6` (el cliente de Groq espera lo que indica la API y reintenta) y pedir respuestas concisas en el prompt. Con eso la batería completa corre sin errores y la elección de tools sigue siendo correcta.
+- **Alternativa descartada:** otro proveedor o un LLM de respaldo (decisión del equipo: solo Groq, simple).
+
 ---
 
 ## Temática / dataset — DECIDIDO
@@ -143,6 +156,16 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Fase 3 (recuperación):** `src/recuperacion.py` con búsqueda, formateo con fuentes y 4 tools. `scripts/probar_recuperacion.py` para calibrar el umbral.
 - Probado con Python 3.14 (todas las dependencias instalan bien).
 
+### 2026-10-29
+- **Fase 4 (agente):** `src/agente.py` con el grafo manual (`agente` ↔ `herramientas`) y el prompt de sistema. `scripts/probar_agente.py` corre una batería de 7 consultas y muestra qué tools eligió el agente:
+  - small-talk ("Hola! cómo andás?") → sin tools ✔
+  - papers en ES y EN → `buscar_en_papers` filtrando por paper, responde citando páginas y en el idioma de la pregunta ✔
+  - "¿Cuántos correos de phishing hay?" → `estadisticas_dataset` (42.891 de 82.486) ✔
+  - ejemplo de phishing bancario → `buscar_en_dataset` dos veces (reformula en inglés); admite que no hay uno que pida *explícitamente* la contraseña del banco y muestra los más cercanos ✔
+  - "capital de Francia" → sin tools, conocimiento general ✔ (no aclaró que no sale de los documentos; ajuste menor de prompt pendiente)
+  - "¿Qué dice Attention sobre el mundial 2022?" → busca y admite que no tiene información ✔
+- **Índice del dataset:** se lanzó la construcción local (`python -m scripts.construir_indice`): 33.792 fragmentos de la muestra de 10k correos. Con embeddings en CPU tarda bastante (~1 h); la búsqueda funciona aunque esté a medias, con los fragmentos ya indexados.
+
 ---
 
 ## Desafíos y soluciones
@@ -155,11 +178,21 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 | Todas las consultas ajenas caían en la misma **tabla de números** de GPT-3 (pág. 63): los fragmentos sin texto real quedan "cerca de todo" en el espacio vectorial. | Filtro en la ingesta: se descartan fragmentos con < 50% de letras (34 de 2.971, casi todos tablas). Las tablas con contenido útil (Tabla 2 de Attention, parámetros de GPT-3) quedan por encima y se conservan. |
 | Las **bibliografías** de los papers también atraen consultas ajenas ("mundial de fútbol 2022" → referencias de GPT-3 con relevancia 0.69, apenas sobre el umbral). | **No se filtran** (decisión consciente): una heurística por años/"et al."/"arXiv" también marcaba párrafos con contenido real. Se cubre con las otras capas (router + prompt del generador que verifica que el fragmento responda). Queda como mejora posible. |
 | Sin el índice del dataset construido, Chroma crea una colección vacía y la búsqueda decía "sin evidencia", lo que el agente interpretaría como "no hay correos así". | La búsqueda detecta la colección vacía y la tool devuelve un `ERROR` explícito. |
+| El plan gratuito de Groq corta con error 429 (1000 tokens de salida/min para Qwen) y Qwen 3 gasta tokens "pensando" antes de responder. | `reasoning_effort="none"`, `max_retries=6` (espera y reintenta) y respuestas concisas por prompt. |
 
 ---
 
 ## Prompts y prompt engineering
 *(guardar acá los prompts clave: router, generación, control de alucinaciones, extracción de memoria)*
+
+### Prompt de sistema del agente (`src/agente.py`, `PROMPT_SISTEMA`)
+Técnicas usadas:
+- **Rol** explícito (experto en phishing y en los papers).
+- **Descripción de cada tool y cuándo usarla** (complementa los docstrings de las tools, que son lo que el LLM lee para elegir).
+- **Clasificación de la consulta por instrucciones**: small-talk → sin tools; papers/dataset → tool obligatoria antes de responder; general → conocimiento propio aclarando que no viene de los documentos.
+- **Control de alucinaciones**: responder solo con los fragmentos; ante `SIN EVIDENCIA` o fragmentos que no responden, decir que no hay información; ante `ERROR`, avisar; citar fuente (paper + página o corpus).
+- **Idioma espejo**: responder en el idioma del usuario aunque los documentos estén en inglés.
+- **Concisión** (también por el límite de tokens de Groq).
 
 ---
 
