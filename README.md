@@ -47,9 +47,17 @@ python -m scripts.construir_indice          # dataset (~10k correos)
 python -m scripts.construir_indice_papers   # papers (~9 min en CPU)
 python -m scripts.probar_recuperacion       # (opcional) probar búsqueda y umbral
 
-# 6. Ejecutar
+# 6. Ejecutar el chatbot (requiere GROQ_API_KEY en .env)
 python main.py
 ```
+
+En el chat se puede preguntar en español o inglés sobre los papers y el dataset.
+Comandos disponibles:
+
+- `/nueva` — empezar una conversación nueva (se olvida el contexto del chat actual)
+- `/usuario <id>` — cambiar de usuario (otros recuerdos de largo plazo) y empezar conversación nueva
+- `/ayuda` — ver la ayuda
+- `/salir` — terminar
 
 ## Estructura
 

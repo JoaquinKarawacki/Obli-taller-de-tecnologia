@@ -128,6 +128,13 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **`construir_agente(checkpointer, store)`** ahora los pide obligatorios: un solo camino de código. Las pruebas que no deben ensuciar la memoria (`probar_agente.py`) pasan las versiones en RAM.
 - **Mejora posible (no implementada):** recortar el historial de conversaciones muy largas (hoy se manda completo al LLM).
 
+### 2026-10-29 — Fase 6: chatbot por consola con comandos de sesión
+- **Decisión:** `src/chatbot.py::iniciar_chat()` arma el agente **una sola vez** (con las memorias persistentes) y entra en un loop de `input()`. `main.py` lo lanza tras verificar `GROQ_API_KEY`.
+- **Comandos** (`/nueva`, `/usuario <id>`, `/ayuda`, `/salir`): dan control sobre `thread_id` y `user_id` para **demostrar en vivo** la memoria (retomar/empezar conversación, cambiar de usuario) sin reiniciar el programa. El resto se trata como mensaje para el agente.
+- **El loop no acumula mensajes:** en cada turno manda solo el mensaje nuevo; el encadenamiento lo hace el checkpointer por `thread_id` (ver Fase 5). Cada turno muestra qué tools usó el agente (evidencia del RAG).
+- **Robustez:** el `invoke` va en `try/except` para que un error de la API (p. ej. 429 de Groq) no corte la sesión. Mensaje de "Cargando modelo..." al construir el agente (la primera búsqueda carga los embeddings, ~470 MB).
+- **Alcance:** el notebook demo (entregable) y el demo "con/sin contexto" quedan para las Fases 6 (resto) y 7.
+
 ---
 
 ## Temática / dataset — DECIDIDO
@@ -183,6 +190,8 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - se recrea el agente (simula reiniciar el programa) y Ana retoma la conversación 1 → recuerda que preguntó por multi-head attention (corto plazo persistido) ✔
   - Ana y Beto en paralelo → Beto no sabe nada de Ana y viceversa ✔
 - Ajuste de prompt: en preguntas generales ahora aclara "esto es conocimiento general, no sale de los documentos cargados" ✔
+
+- **Fase 6 (chatbot):** `src/chatbot.py::iniciar_chat()` + `main.py` cableado. Loop de chat por consola con memorias persistentes y comandos `/nueva`, `/usuario <id>`, `/ayuda`, `/salir`. Muestra las tools usadas en cada turno. `README` actualizado con los comandos.
 
 ---
 

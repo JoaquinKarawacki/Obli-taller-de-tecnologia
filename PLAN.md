@@ -129,9 +129,9 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [x] Prueba: `scripts/probar_memoria.py`.
 
 ### Fase 6 — Chatbot y pruebas
-- [ ] Loop de chat en el notebook.
+- [x] Loop de chat por consola (`src/chatbot.py::iniciar_chat` + `main.py`) con comandos (`/nueva`, `/usuario`, `/ayuda`, `/salir`).
 - [ ] Demo "con contexto vs sin contexto" (Parte 1 del Lab03) para mostrar el aporte del RAG.
-- [ ] Batería de preguntas variadas (dataset, papers, general, small-talk, "no sé").
+- [ ] Batería de preguntas variadas (dataset, papers, general, small-talk, "no sé"). *(parcial: `scripts/probar_agente.py`)*
 - [ ] Registrar resultados y ajustar prompts.
 
 ### Fase 7 — Documentación y notebook final
