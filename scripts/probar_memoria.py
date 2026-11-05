@@ -55,6 +55,10 @@ if __name__ == "__main__":
 
     print("\n### 4. Ana y Beto en paralelo")
     with ThreadPoolExecutor() as hilos:
-        hilos.submit(decir, agente, BETO, "1", "Hola, ¿sabés cómo me llamo?")
-        hilos.submit(decir, agente, ANA, "3", "Hola, ¿sabés cómo me llamo?")
+        tareas = [
+            hilos.submit(decir, agente, BETO, "1", "Hola, ¿sabés cómo me llamo?"),
+            hilos.submit(decir, agente, ANA, "3", "Hola, ¿sabés cómo me llamo?"),
+        ]
+        for tarea in tareas:
+            tarea.result()  # sin esto, una excepción en un hilo pasaría inadvertida
     print(f"\nRecuerdos de Beto: {memoria.leer_recuerdos(agente.store, BETO)}")

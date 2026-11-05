@@ -135,6 +135,12 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Robustez:** el `invoke` va en `try/except` para que un error de la API (p. ej. 429 de Groq) no corte la sesión. Mensaje de "Cargando modelo..." al construir el agente (la primera búsqueda carga los embeddings, ~470 MB).
 - **Alcance:** el notebook demo (entregable) y el demo "con/sin contexto" quedan para las Fases 6 (resto) y 7.
 
+### 2026-11-05 — Retomar conversaciones desde el chat y robustez del agente
+- **Retomar:** el chat no podía volver a una conversación, aunque el checkpointer la tuviera guardada. Se agregan `/conversaciones` y `/retomar <id>`, con un índice por usuario en el store (`("usuarios", user_id, "conversaciones")`). El índice también impide retomar conversaciones de otro usuario.
+- **Fallas de tools:** una excepción en una tool dejaba guardada una llamada sin respuesta. Ahora el nodo `herramientas` siempre devuelve un `ToolMessage` y el error se informa como `ERROR`.
+- **Títulos de papers:** se agregan patrones (`config.PATRONES_PAPERS`) para nombres como "gpt3" o "transformer". Un nombre ambiguo devuelve la lista de documentos en vez de elegir un paper al azar.
+- **`max_tokens=900`:** sin este valor Groq estimaba más de 1000 tokens de salida y rechazaba el pedido con un 429 que los reintentos no resolvían. Desventaja: una respuesta muy larga se corta.
+
 ---
 
 ## Temática / dataset — DECIDIDO

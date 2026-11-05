@@ -32,6 +32,10 @@ CSV_CONSOLIDADO = DIR_DATOS / "dataset_consolidado.csv"
 # --- Modelos ---
 MODELO_LLM = "qwen/qwen3.8-27b"                 # Groq (gratis, multilingüe, buen tool calling)
 MODELO_EMBEDDINGS = "intfloat/multilingual-e5-small"  # embeddings locales multilingües
+# Tope de tokens por respuesta. Debe quedar por debajo del límite gratuito de Groq
+# (1000 tokens de salida por minuto): sin esto Groq estima más de 1000 y rechaza el
+# pedido con un 429 que los reintentos no resuelven.
+MAX_TOKENS_RESPUESTA = 900
 
 # El modelo e5 requiere prefijos: "passage: " para documentos y "query: " para consultas.
 PREFIJO_PASSAGE = "passage: "
@@ -58,6 +62,19 @@ TITULOS_PAPERS = {
     "GPT Improving Language Understanding by Generative Pretraining.pdf": "Improving Language Understanding by Generative Pre-Training (GPT)",
     "Language Models are Few-Shot Learners (GPT3).pdf": "Language Models are Few-Shot Learners (GPT-3)",
     "Scaling Laws for Neural Language Models.pdf": "Scaling Laws for Neural Language Models",
+}
+
+# Formas habituales de nombrar cada paper (expresiones regulares, en minúscula).
+# Resuelven lo que el título no contiene literalmente, como "gpt3" o "transformer".
+PATRONES_PAPERS = {
+    r"gpt[\s-]?3|few[\s-]?shot": TITULOS_PAPERS["Language Models are Few-Shot Learners (GPT3).pdf"],
+    r"gpt[\s-]?1|gpt(?![\s-]?\d)": TITULOS_PAPERS["GPT Improving Language Understanding by Generative Pretraining.pdf"],
+    r"attention|transformer": TITULOS_PAPERS["Attention is all you need.pdf"],
+    r"scaling": TITULOS_PAPERS["Scaling Laws for Neural Language Models.pdf"],
+    r"subliminal": TITULOS_PAPERS["2507.14805v1.pdf"],
+    r"ddia|kleppmann|data[\s-]?intensive|designing data": TITULOS_PAPERS[
+        "Designing Data-Intensive Applications The Big Ideas Behind Reliable, Scalable, and Maintainable Systems by Martin Kleppmann (z-l.pdf"
+    ],
 }
 
 # Proporción mínima de letras para indexar un fragmento de paper (descarta tablas

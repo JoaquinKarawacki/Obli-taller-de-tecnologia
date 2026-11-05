@@ -12,6 +12,7 @@ y del Lab03 (retriever + filtros de metadata + LongContextReorder), con agregado
     etiqueta del correo); en el Lab03 la metadata era sintética.
 """
 import difflib
+import re
 from functools import lru_cache
 
 from langchain_chroma import Chroma
@@ -96,13 +97,24 @@ def _resolver_titulo(texto: str) -> str | None:
     """Encuentra el título exacto de un paper a partir de un nombre aproximado.
 
     El LLM puede escribir "attention", "el paper de GPT-3" o "Kleppmann": se busca
-    primero por coincidencia parcial y si no, por similitud de texto.
+    primero por los nombres habituales, después por coincidencia parcial con el
+    título y por último por similitud de texto.
+
+    Si el nombre es ambiguo (ej. "language models" aparece en varios títulos) devuelve
+    ``None``: es mejor que el agente vea la lista de documentos a que busque en el
+    paper equivocado y concluya que no hay evidencia.
     """
     titulos = list(config.TITULOS_PAPERS.values())
     texto = texto.lower().strip()
-    for titulo in titulos:
-        if texto in titulo.lower():
-            return titulo
+
+    por_patron = {titulo for patron, titulo in config.PATRONES_PAPERS.items() if re.search(patron, texto)}
+    if len(por_patron) == 1:
+        return por_patron.pop()
+
+    por_titulo = [titulo for titulo in titulos if texto in titulo.lower()]
+    if por_titulo:
+        return por_titulo[0] if len(por_titulo) == 1 else None
+
     parecidos = difflib.get_close_matches(texto, [t.lower() for t in titulos], n=1, cutoff=0.4)
     if parecidos:
         return next(t for t in titulos if t.lower() == parecidos[0])

@@ -18,13 +18,22 @@ El chatbot es multilingüe: se puede preguntar en español o inglés.
 """
 import uuid
 
+from langchain_core.messages import HumanMessage
+
 from src.agente import construir_agente
-from src.memoria import crear_memoria_corto_plazo, crear_memoria_largo_plazo
+from src.memoria import (
+    crear_memoria_corto_plazo,
+    crear_memoria_largo_plazo,
+    listar_conversaciones,
+    registrar_conversacion,
+)
 
 # Comandos del chat (empiezan con "/"). El resto se trata como mensaje para el agente.
 AYUDA = """\
 Comandos disponibles:
-  /nueva          -> empieza una conversación nueva (se olvida el contexto del chat actual)
+  /nueva          -> pausa esta conversación y empieza una nueva
+  /conversaciones -> lista tus conversaciones guardadas
+  /retomar <id>   -> vuelve a una conversación guardada, con todo su contexto
   /usuario <id>   -> cambia de usuario (otros recuerdos de largo plazo) y empieza conversación nueva
   /ayuda          -> muestra esta ayuda
   /salir          -> termina el programa
@@ -42,10 +51,15 @@ def _nuevo_thread_id() -> str:
 
 
 def _herramientas_usadas(mensajes) -> list[str]:
-    """Nombres de las tools que el agente pidió en este turno (para evidenciar el RAG)."""
+    """Nombres de las tools que el agente pidió en este turno (para evidenciar el RAG).
+
+    ``mensajes`` trae toda la conversación, así que se mira solo lo posterior al
+    último mensaje del usuario.
+    """
+    inicio_turno = max(i for i, mensaje in enumerate(mensajes) if isinstance(mensaje, HumanMessage))
     return [
         llamada["name"]
-        for mensaje in mensajes
+        for mensaje in mensajes[inicio_turno:]
         for llamada in getattr(mensaje, "tool_calls", [])
     ]
 
@@ -57,7 +71,8 @@ def iniciar_chat(user_id_inicial: str = "usuario") -> None:
     de memoria) y después entra en el bucle de conversación.
     """
     print("Cargando modelo y memorias (puede tardar unos segundos la primera vez)...")
-    agente = construir_agente(crear_memoria_corto_plazo(), crear_memoria_largo_plazo())
+    store = crear_memoria_largo_plazo()
+    agente = construir_agente(crear_memoria_corto_plazo(), store)
 
     user_id = user_id_inicial
     thread_id = _nuevo_thread_id()
@@ -90,6 +105,26 @@ def iniciar_chat(user_id_inicial: str = "usuario") -> None:
                 thread_id = _nuevo_thread_id()
                 print(f"(nueva conversación: {thread_id})")
                 continue
+            if comando == "/conversaciones":
+                conversaciones = listar_conversaciones(store, user_id)
+                if not conversaciones:
+                    print("Todavía no tenés conversaciones guardadas.")
+                for id_conversacion, titulo in conversaciones.items():
+                    marca = " (actual)" if id_conversacion == thread_id else ""
+                    print(f"  {id_conversacion}{marca}: {titulo}")
+                continue
+            if comando == "/retomar":
+                if len(partes) < 2 or not partes[1].strip():
+                    print("Uso: /retomar <id>  (los id se ven con /conversaciones)")
+                    continue
+                id_conversacion = partes[1].strip()
+                conversaciones = listar_conversaciones(store, user_id)
+                if id_conversacion not in conversaciones:
+                    print(f"No tenés ninguna conversación con id '{id_conversacion}'. Mirá /conversaciones.")
+                    continue
+                thread_id = id_conversacion
+                print(f"(conversación retomada: {conversaciones[thread_id]})")
+                continue
             if comando == "/usuario":
                 if len(partes) < 2 or not partes[1].strip():
                     print("Uso: /usuario <id>  (por ejemplo: /usuario ana)")
@@ -104,6 +139,7 @@ def iniciar_chat(user_id_inicial: str = "usuario") -> None:
 
         # --- Mensaje normal: se lo mandamos al agente ---
         sesion = {"configurable": {"thread_id": thread_id, "user_id": user_id}}
+        registrar_conversacion(store, user_id, thread_id, texto)
         try:
             resultado = agente.invoke({"messages": [("user", texto)]}, sesion)
         except Exception as error:

@@ -54,6 +54,27 @@ def leer_recuerdos(store: BaseStore, user_id: str) -> list[str]:
     return [item.value["texto"] for item in store.search(_espacio(user_id), limit=100)]
 
 
+def _espacio_conversaciones(user_id: str) -> tuple[str, ...]:
+    """Namespace del store con el índice de conversaciones de un usuario."""
+    return ("usuarios", user_id, "conversaciones")
+
+
+def registrar_conversacion(store: BaseStore, user_id: str, thread_id: str, primer_mensaje: str) -> None:
+    """Anota una conversación nueva para poder listarla y retomarla después.
+
+    El historial lo guarda el checkpointer; esto es solo el índice por usuario, que
+    además impide retomar conversaciones de otro usuario.
+    """
+    if store.get(_espacio_conversaciones(user_id), thread_id) is None:
+        store.put(_espacio_conversaciones(user_id), thread_id, {"titulo": primer_mensaje[:60]})
+
+
+def listar_conversaciones(store: BaseStore, user_id: str) -> dict[str, str]:
+    """Devuelve las conversaciones del usuario (``thread_id`` -> título), de la más vieja a la más nueva."""
+    items = store.search(_espacio_conversaciones(user_id), limit=100)
+    return {item.key: item.value["titulo"] for item in sorted(items, key=lambda item: item.created_at)}
+
+
 @tool
 def guardar_recuerdo(
     recuerdo: str,

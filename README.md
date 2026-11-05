@@ -54,7 +54,9 @@ python main.py
 En el chat se puede preguntar en español o inglés sobre los papers y el dataset.
 Comandos disponibles:
 
-- `/nueva` — empezar una conversación nueva (se olvida el contexto del chat actual)
+- `/nueva` — pausar la conversación actual y empezar una nueva
+- `/conversaciones` — listar las conversaciones guardadas del usuario
+- `/retomar <id>` — volver a una conversación guardada, incluso tras reiniciar el programa
 - `/usuario <id>` — cambiar de usuario (otros recuerdos de largo plazo) y empezar conversación nueva
 - `/ayuda` — ver la ayuda
 - `/salir` — terminar

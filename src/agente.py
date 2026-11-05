@@ -77,6 +77,7 @@ def crear_llm() -> ChatGroq:
         model=config.MODELO_LLM,
         temperature=0,
         reasoning_effort="none",
+        max_tokens=config.MAX_TOKENS_RESPUESTA,
         max_retries=6,
     )
 
@@ -107,12 +108,19 @@ def construir_agente(checkpointer, store):
         """Ejecuta cada tool que pidió el LLM y devuelve un ToolMessage por cada una."""
         resultados = []
         for llamada in estado["messages"][-1].tool_calls:
-            herramienta = herramientas_por_nombre[llamada["name"]]
-            argumentos = llamada["args"]
-            if herramienta is guardar_recuerdo:
-                # El usuario y el store salen de la sesión, no del LLM.
-                argumentos = {**argumentos, "user_id": config["configurable"]["user_id"], "store": store}
-            salida = herramienta.invoke(argumentos)
+            # Cada tool_call debe recibir su ToolMessage aunque la tool falle: si no, la
+            # conversación queda guardada con una llamada sin respuesta y la API del
+            # LLM rechaza todos los turnos siguientes. El error se le informa al LLM,
+            # que ya sabe explicarlo (ver reglas del prompt sobre "ERROR").
+            try:
+                herramienta = herramientas_por_nombre[llamada["name"]]
+                argumentos = llamada["args"]
+                if herramienta is guardar_recuerdo:
+                    # El usuario y el store salen de la sesión, no del LLM.
+                    argumentos = {**argumentos, "user_id": config["configurable"]["user_id"], "store": store}
+                salida = herramienta.invoke(argumentos)
+            except Exception as error:
+                salida = f"ERROR: falló la herramienta {llamada['name']}: {error}"
             resultados.append(ToolMessage(content=salida, tool_call_id=llamada["id"]))
         return {"messages": resultados}
 
