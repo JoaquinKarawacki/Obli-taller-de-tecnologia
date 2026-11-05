@@ -79,7 +79,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 | Memoria corto plazo | **Checkpointer de LangGraph** (`SqliteSaver`) | Aislada por `thread_id`, persistida en `memoria.sqlite3` |
 | Memoria largo plazo | **Store de LangGraph** (`SqliteStore`) | Compartida entre conversaciones, por `user_id` |
 | Sesiones paralelas | `thread_id` (conversación) + `user_id` (usuario) | |
-| Entregable | **Módulos `.py`** (+ notebook demo opcional al cierre) | Decisión del equipo: más modular y legible |
+| Entregable | **Módulos `.py`** + **notebook con outputs** (`obligatorio_agentic_rag.ipynb`) | La letra pide el notebook como entregable; importa los módulos |
 | Interfaz (demo) | **Gradio** | UI de chat para la defensa (opcional que suma) |
 | Otros opcionales | Comparar embeddings/LLMs/chunking | Suman, no restan |
 

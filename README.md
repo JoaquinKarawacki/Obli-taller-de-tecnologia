@@ -6,6 +6,23 @@ vectorial, agentes con *tool calling* y memoria a corto y largo plazo.
 
 > 📄 Plan completo y fases: [`PLAN.md`](./PLAN.md) · Decisiones y avances: [`BITACORA.md`](./BITACORA.md)
 
+## Estado actual (5/11/2026): trabajo en curso
+
+**Todavía no está listo para entregar.** Entrega: 16/11/2026 a las 21:00.
+
+Falta terminar:
+
+- [ ] **Notebook:** `obligatorio_agentic_rag.ipynb` está armado, pero **no tiene outputs**. Las secciones 1 a 6 se ejecutaron con datos reales; las secciones 7 a 10 solo se probaron con un LLM simulado. Falta ejecutarlo con Groq.
+- [ ] **Informe en PDF:** no está empezado. El material base está en `BITACORA.md`.
+- [ ] **Prueba final con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada.
+- [ ] **`requirements.txt`:** las versiones no están fijadas.
+- [ ] **ZIP de entrega:** el CSV y `chroma_db/` superan los 40 MB. Hay que definir con los docentes cómo se evalúa.
+- [ ] **Integración:** estos cambios están en `feature/calidad-respuestas`; falta mergearlos a `develop` y después a `main`.
+
+A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 y hasta 2 en la página 4.
+
+**Cuota de Groq:** el plan gratuito permite 200.000 tokens por día y 8.000 por minuto, lo que da unas 40 preguntas por día. Conviene no gastarla en pruebas antes de ejecutar el notebook o defender.
+
 ## Stack (100% gratuito)
 
 - **Python 3.11+**
@@ -69,6 +86,7 @@ Comandos disponibles:
 ├── requirements.txt
 ├── .env.example
 ├── main.py              # punto de entrada
+├── obligatorio_agentic_rag.ipynb  # notebook entregable, con el sistema de punta a punta
 ├── src/                 # módulos del sistema (uno por fase)
 │   ├── config.py        # rutas, modelos y constantes
 │   ├── datos.py         # Fase 1: consolidación del dataset

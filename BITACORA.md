@@ -33,7 +33,7 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 
 ### 2026-09-24 — Estructura: módulos .py en vez de notebook
 - **Decisión:** el equipo optó por **archivos `.py` separados** (uno por fase) en lugar de un único notebook, por ser más modular y legible y permitir trabajo en paralelo.
-- **La letra dice "preferentemente `.ipynb`"** y pide "notebook con outputs" en entregables → **no es obligatorio**. Para cubrirlo, al cierre se agrega un **notebook demo** que importa los módulos y muestra outputs.
+- **La letra dice "preferentemente `.ipynb`"** para la implementación, pero pide "notebook funcional y con sus outputs" como entregable. **Corrección del 2026-11-05:** el notebook se trata como obligatorio. Importa los módulos y muestra outputs (`obligatorio_agentic_rag.ipynb`).
 - **Alternativa descartada:** todo en un solo notebook (menos legible, difícil de dividir entre integrantes).
 
 ### 2026-09-24 — Consolidación del dataset en un único CSV
@@ -242,5 +242,6 @@ Técnicas usadas:
 
 ## Uso de IA generativa (para citar en el informe)
 - **Herramienta:** Claude Code (Anthropic).
-- **Contexto de uso:** apoyo en la estructuración del proyecto, redacción de documentación (`PLAN.md`, `BITACORA.md`) y exploración de datasets.
+- **Contexto de uso:** apoyo en la estructuración del proyecto, redacción de documentación (`PLAN.md`, `BITACORA.md`) y exploración de datasets. El 2026-11-05 también se usó para analizar el proyecto, corregir errores, implementar mejoras del chatbot, ejecutar pruebas y armar el notebook.
+- **A revisar antes de entregar:** cada integrante debe confirmar que esta lista refleja todo el uso real de IA.
 - **Responsabilidad:** todo el contenido generado con IA se revisa y verifica; los errores son responsabilidad del grupo.
