@@ -26,7 +26,10 @@ de alto nivel que oculten la lógica del agente (ver PLAN.md). Por eso también 
 nodo de tools y la condición de salida están escritos a mano (en vez de
 ``ToolNode`` / ``tools_condition``).
 """
-from langchain_core.messages import SystemMessage, ToolMessage
+import time
+
+from groq import BadRequestError, RateLimitError
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_groq import ChatGroq
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -44,15 +47,17 @@ Tenés acceso a herramientas:
 - buscar_en_papers / listar_papers: para preguntas sobre los documentos cargados (Attention, GPT, GPT-3, Scaling Laws, Subliminal Learning, Designing Data-Intensive Applications).
 - buscar_en_dataset: para mostrar ejemplos reales de correos de phishing o legítimos, o comparar un correo sospechoso con casos conocidos.
 - estadisticas_dataset: para preguntas de cantidades o composición del dataset.
+- ranking_dataset: para saber qué remitentes, dominios o asuntos aparecen más.
 - guardar_recuerdo: para recordar datos del usuario en futuras conversaciones.
 
 Cómo decidir según el tipo de consulta:
 1. Saludos, agradecimientos o charla (small-talk): respondé breve y amable, SIN usar herramientas.
-2. Preguntas sobre los papers o el dataset: usá SIEMPRE la herramienta correspondiente antes de responder. Podés llamar varias herramientas o buscar de nuevo con otras palabras si el primer resultado no alcanza.
-3. Preguntas generales de conocimiento (fuera de los papers y del dataset): podés responder con tu conocimiento general, pero SIEMPRE aclarando en la respuesta que no sale de los documentos cargados.
+2. Preguntas sobre los papers o el dataset: usá SIEMPRE la herramienta correspondiente antes de responder, también en las preguntas de seguimiento. Los fragmentos de turnos anteriores ya no están disponibles: solo podés reutilizar sin buscar lo que aparece escrito en tus respuestas previas, y cualquier otro dato hay que buscarlo. Podés llamar varias herramientas o buscar de nuevo con otras palabras si el primer resultado no alcanza.
+3. Preguntas generales de conocimiento (fuera de los papers y del dataset): podés responder con tu conocimiento general, pero SIEMPRE terminá la respuesta con una nota que aclare que no sale de los documentos cargados.
 
 Reglas contra las alucinaciones:
 - Para preguntas sobre los papers o el dataset, respondé SOLO con la información de los fragmentos recuperados. No inventes datos, cifras ni citas.
+- No agregues calificativos ni comparaciones que el fragmento no diga ("el más pequeño", "el primero", "el mejor"). Si un dato adicional no es necesario para responder, omitilo.
 - Si la herramienta devuelve "{SIN_EVIDENCIA}" o los fragmentos no responden la pregunta, decí explícitamente que no tenés información suficiente en los documentos.
 - Si una herramienta devuelve "ERROR", explicá que no pudiste consultar esa fuente.
 - Citá la fuente de cada dato (título del paper y página, o corpus del correo).
@@ -62,7 +67,38 @@ Memoria a largo plazo:
 - NO guardes preguntas puntuales, datos de los documentos ni datos sensibles (contraseñas, tarjetas, documentos de identidad).
 - Usá los recuerdos para personalizar la respuesta (ej. llamarlo por su nombre o adaptar el nivel técnico).
 
-Respondé de forma clara y concisa (salvo que el usuario pida más detalle), siempre en el mismo idioma en que escribe el usuario (español o inglés), aunque los documentos estén en inglés."""
+Ejemplos de cómo responder:
+
+Usuario: ¿Cómo se prepara un mate?
+Respuesta: Se llena el mate con yerba, se humedece con agua tibia y se ceba con agua a unos 75 °C.
+(Nota: esto es conocimiento general, no sale de los documentos cargados.)
+
+Usuario: ¿Qué optimizador usa el paper X?
+Fragmento recuperado: "[1] Fuente: X, pág. 7. We used the Adam optimizer."
+Respuesta: Usa el optimizador Adam (X, pág. 7).
+
+Usuario: ¿Cuánto costó entrenar el modelo del paper X?
+Fragmento recuperado: "[1] Fuente: X, pág. 7. We used the Adam optimizer."
+Respuesta: No tengo información suficiente en los documentos: los fragmentos recuperados no mencionan el costo de entrenamiento.
+
+Respondé de forma clara y concisa, siempre en el mismo idioma en que escribe el usuario (español o inglés), aunque los documentos estén en inglés.
+Aunque el usuario pida mucho detalle, nunca superes las 400 palabras: priorizá lo más importante y terminá la respuesta completa."""
+
+
+def recortar_historial(mensajes: list) -> list:
+    """Arma el historial que ve el LLM, sin tocar lo que guarda el checkpointer.
+
+    De los turnos anteriores se quedan solo las preguntas y respuestas finales: los
+    fragmentos recuperados ocupan muchos tokens y ya cumplieron su función. Además se
+    aplica una ventana deslizante con los últimos mensajes. El turno actual va completo.
+    """
+    inicio_turno = max(i for i, mensaje in enumerate(mensajes) if isinstance(mensaje, HumanMessage))
+    anteriores = [
+        mensaje
+        for mensaje in mensajes[:inicio_turno]
+        if isinstance(mensaje, HumanMessage) or (isinstance(mensaje, AIMessage) and not mensaje.tool_calls)
+    ]
+    return anteriores[-config.VENTANA_HISTORIAL:] + mensajes[inicio_turno:]
 
 
 def crear_llm() -> ChatGroq:
@@ -80,6 +116,34 @@ def crear_llm() -> ChatGroq:
         max_tokens=config.MAX_TOKENS_RESPUESTA,
         max_retries=6,
     )
+
+
+def invocar_llm(llm, mensajes: list) -> AIMessage:
+    """Llama al LLM y maneja las fallas ocasionales de Groq y del modelo.
+
+    - Plan gratuito: al superar los tokens por minuto Groq responde 429 e indica
+      cuánto esperar. Si es poco se espera y se reintenta; si es mucho se agotó la
+      cuota diaria, y esperar solo colgaría el chat, así que el error se propaga.
+    - A veces el modelo arma mal una tool y Groq responde 400 "tool call validation
+      failed". Es un error de esa generación, así que se reintenta.
+    - A veces deja en la respuesta el razonamiento interno, cerrado con ``</think>``.
+      Se conserva solo lo que viene después.
+    """
+    for intento in range(1, config.INTENTOS_LLM + 1):
+        try:
+            respuesta = llm.invoke(mensajes)
+            break
+        except RateLimitError as error:
+            espera = float(error.response.headers.get("retry-after", config.ESPERA_MAXIMA))
+            if intento == config.INTENTOS_LLM or espera > config.ESPERA_MAXIMA:
+                raise
+            time.sleep(espera + 1)
+        except BadRequestError as error:
+            if "tool call validation failed" not in str(error) or intento == config.INTENTOS_LLM:
+                raise
+    if isinstance(respuesta.content, str) and "</think>" in respuesta.content:
+        respuesta.content = respuesta.content.rsplit("</think>", 1)[1].strip()
+    return respuesta
 
 
 def construir_agente(checkpointer, store):
@@ -101,8 +165,8 @@ def construir_agente(checkpointer, store):
         recuerdos = leer_recuerdos(store, config["configurable"]["user_id"])
         lista = "\n".join(f"- {recuerdo}" for recuerdo in recuerdos) or "(todavía no hay recuerdos)"
         prompt = f"{PROMPT_SISTEMA}\n\nRecuerdos guardados de este usuario:\n{lista}"
-        mensajes = [SystemMessage(prompt)] + estado["messages"]
-        return {"messages": [llm_con_tools.invoke(mensajes)]}
+        mensajes = [SystemMessage(prompt)] + recortar_historial(estado["messages"])
+        return {"messages": [invocar_llm(llm_con_tools, mensajes)]}
 
     def nodo_herramientas(estado: MessagesState, config: RunnableConfig, *, store: BaseStore):
         """Ejecuta cada tool que pidió el LLM y devuelve un ToolMessage por cada una."""

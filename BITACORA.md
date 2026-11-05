@@ -141,6 +141,14 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Títulos de papers:** se agregan patrones (`config.PATRONES_PAPERS`) para nombres como "gpt3" o "transformer". Un nombre ambiguo devuelve la lista de documentos en vez de elegir un paper al azar.
 - **`max_tokens=900`:** sin este valor Groq estimaba más de 1000 tokens de salida y rechazaba el pedido con un 429 que los reintentos no resolvían. Desventaja: una respuesta muy larga se corta.
 
+### 2026-11-05 — Calidad de respuestas (pruebas reales con Groq)
+- **Prompt:** se agregan 3 ejemplos few-shot (conocimiento general, dato presente en el fragmento y dato ausente), una regla contra calificativos no respaldados y un máximo de 400 palabras. Motivo: el agente llamó "el más pequeño" a GPT-3 3B, omitió la aclaración de conocimiento general y una respuesta se cortó.
+- **`ranking_dataset`:** nueva tool para remitentes, dominios y asuntos más frecuentes. Informa sobre cuántos correos se calculó, porque `sender` falta en cerca del 40%.
+- **Historial:** `recortar_historial` quita de los turnos anteriores los fragmentos y las llamadas a tools, y aplica una ventana de 12 mensajes. El checkpointer conserva todo; el recorte solo afecta lo que ve el LLM.
+- **Seguimientos:** con ese recorte, una pregunta de seguimiento se respondió sin buscar e inventó datos del modelo big. El prompt ahora exige buscar todo dato que no esté escrito en respuestas previas.
+- **Fallas del modelo:** `invocar_llm` reintenta el 400 "tool call validation failed" y elimina el razonamiento filtrado con `</think>`.
+- **Límites de Groq medidos:** 8000 tokens por minuto, 200.000 por día y 1000 pedidos por día, sumando entrada y salida. Cada llamada pidió entre 2000 y 3000 tokens, y una pregunta con búsqueda hace al menos dos. El cupo diario se recupera de a poco, unos 139 tokens por minuto. `invocar_llm` espera los límites cortos y falla enseguida si se agotó la cuota diaria.
+
 ---
 
 ## Temática / dataset — DECIDIDO

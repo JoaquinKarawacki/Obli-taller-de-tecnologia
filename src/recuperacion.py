@@ -15,6 +15,7 @@ import difflib
 import re
 from functools import lru_cache
 
+import pandas as pd
 from langchain_chroma import Chroma
 from langchain_community.document_transformers import LongContextReorder
 from langchain_core.documents import Document
@@ -182,15 +183,27 @@ def listar_papers() -> str:
 
 
 @lru_cache(maxsize=1)
+def _tabla_dataset() -> pd.DataFrame:
+    """Carga una sola vez el dataset consolidado y agrega el dominio del remitente."""
+    df = datos.cargar_consolidado()
+    dominio = df["sender"].astype("string").str.extract(r"@([\w.-]+)", expand=False)
+    return df.assign(dominio=dominio.str.lower().str.rstrip("."))
+
+
+@lru_cache(maxsize=1)
 def _resumen_dataset() -> str:
     """Calcula una sola vez las estadísticas del dataset consolidado."""
-    df = datos.cargar_consolidado()
+    df = _tabla_dataset()
     por_label = df["label"].value_counts().to_dict()
     por_fuente = df.groupby("fuente")["label"].agg(["count", "sum"])
     lineas = [
         f"Total de correos: {len(df)}",
         f"Phishing: {por_label.get(1, 0)} | Legítimos: {por_label.get(0, 0)}",
         f"Correos indexados para búsqueda semántica: muestra balanceada de {config.TAMANO_MUESTRA}",
+        f"Correos con el dato de URLs: {df['urls'].notna().sum()} (Enron y Ling no lo tienen)",
+        f"Con URLs entre esos correos: {int((df['urls'] == 1).sum())} "
+        f"(phishing: {int(((df['urls'] == 1) & (df['label'] == 1)).sum())}, "
+        f"legítimos: {int(((df['urls'] == 1) & (df['label'] == 0)).sum())})",
         "Por corpus de origen (total / phishing):",
     ]
     for fuente, fila in por_fuente.iterrows():
@@ -210,4 +223,33 @@ def estadisticas_dataset() -> str:
         return "No se encontró el dataset consolidado en data/ (ver README)."
 
 
-HERRAMIENTAS = [buscar_en_papers, buscar_en_dataset, listar_papers, estadisticas_dataset]
+@tool
+def ranking_dataset(campo: str = "remitente", tipo_correo: str = "", cantidad: int = 10) -> str:
+    """Devuelve los valores más frecuentes del dataset completo. Usar para preguntas
+    como "¿qué remitente aparece más?" o "¿qué dominios usan más los phishing?".
+
+    Args:
+        campo: "remitente", "dominio" o "asunto".
+        tipo_correo: opcional; "phishing" o "legitimo" para contar solo ese tipo.
+        cantidad: cuántos valores devolver (entre 1 y 20).
+    """
+    columnas = {"remitente": "sender", "dominio": "dominio", "asunto": "subject"}
+    columna = columnas.get(campo.lower().strip())
+    if columna is None:
+        return f"ERROR: campo '{campo}' no válido. Opciones: remitente, dominio, asunto."
+    try:
+        df = _tabla_dataset()
+    except FileNotFoundError:
+        return "ERROR: no se encontró el dataset consolidado en data/ (ver README)."
+    if tipo_correo.lower().startswith("phish"):
+        df = df[df["label"] == 1]
+    elif tipo_correo.lower().startswith("leg"):
+        df = df[df["label"] == 0]
+    valores = df[columna].dropna()
+    conteos = valores.value_counts().head(max(1, min(int(cantidad), 20)))
+    lineas = [f"Calculado sobre {len(valores)} de {len(df)} correos (el resto no tiene este dato):"]
+    lineas += [f"- {valor}: {total}" for valor, total in conteos.items()]
+    return "\n".join(lineas)
+
+
+HERRAMIENTAS = [buscar_en_papers, buscar_en_dataset, listar_papers, estadisticas_dataset, ranking_dataset]

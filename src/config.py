@@ -36,6 +36,14 @@ MODELO_EMBEDDINGS = "intfloat/multilingual-e5-small"  # embeddings locales multi
 # (1000 tokens de salida por minuto): sin esto Groq estima más de 1000 y rechaza el
 # pedido con un 429 que los reintentos no resuelven.
 MAX_TOKENS_RESPUESTA = 900
+# Mensajes de turnos anteriores que ve el LLM (ventana deslizante). El checkpointer
+# guarda la conversación completa; esto solo limita lo que se manda en cada llamada.
+VENTANA_HISTORIAL = 12
+# Veces que se intenta generar la respuesta si Groq limita el pedido o el modelo arma
+# mal una tool. Límites gratuitos de Groq para este modelo: 8000 tokens por minuto y
+# 200.000 por día, sumando entrada y salida.
+INTENTOS_LLM = 4
+ESPERA_MAXIMA = 60      # si Groq pide esperar más que esto, se agotó la cuota diaria
 
 # El modelo e5 requiere prefijos: "passage: " para documentos y "query: " para consultas.
 PREFIJO_PASSAGE = "passage: "

@@ -18,6 +18,7 @@ El chatbot es multilingüe: se puede preguntar en español o inglés.
 """
 import uuid
 
+from groq import RateLimitError
 from langchain_core.messages import HumanMessage
 
 from src.agente import construir_agente
@@ -142,8 +143,11 @@ def iniciar_chat(user_id_inicial: str = "usuario") -> None:
         registrar_conversacion(store, user_id, thread_id, texto)
         try:
             resultado = agente.invoke({"messages": [("user", texto)]}, sesion)
+        except RateLimitError:
+            print("[Groq: se agotó la cuota de tokens del plan gratuito. Probá de nuevo más tarde.]")
+            continue
         except Exception as error:
-            # No cortamos la sesión por un error de la API (ej. rate limit de Groq).
+            # No cortamos la sesión por otros errores de la API.
             print(f"[error al consultar al agente: {error}]")
             continue
 
