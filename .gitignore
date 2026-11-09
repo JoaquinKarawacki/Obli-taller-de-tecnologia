@@ -14,6 +14,8 @@ __pycache__/
 data/
 chroma_db/
 *.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
 
 # SO / editores
 .DS_Store
