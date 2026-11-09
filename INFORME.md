@@ -6,9 +6,9 @@
 
 | Integrante | Número de estudiante |
 |---|---|
-| [PENDIENTE] | [PENDIENTE] |
-| [PENDIENTE] | [PENDIENTE] |
-| [PENDIENTE] | [PENDIENTE] |
+| Niclás Castro | 308251 |
+| Pedro Morga| 319981  |
+| Joaquín Karawacki  | 325535 |
 
 Repositorio: <https://github.com/JoaquinKarawacki/Obli-taller-de-tecnologia>
 
