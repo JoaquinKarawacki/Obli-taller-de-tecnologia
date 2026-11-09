@@ -6,18 +6,24 @@ vectorial, agentes con *tool calling* y memoria a corto y largo plazo.
 
 > 📄 Plan completo y fases: [`PLAN.md`](./PLAN.md) · Decisiones y avances: [`BITACORA.md`](./BITACORA.md)
 
-## Estado actual (5/11/2026): trabajo en curso
+## Estado actual (9/11/2026): trabajo en curso
 
 **Todavía no está listo para entregar.** Entrega: 16/11/2026 a las 21:00.
 
+Hecho:
+
+- [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs. 12 de 12 decisiones de tools correctas.
+- [x] **Informe:** borrador completo en `INFORME.md`.
+- [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
+
 Falta terminar:
 
-- [ ] **Notebook:** `obligatorio_agentic_rag.ipynb` está armado, pero **no tiene outputs**. Las secciones 1 a 6 se ejecutaron con datos reales; las secciones 7 a 10 solo se probaron con un LLM simulado. Falta ejecutarlo con Groq.
-- [ ] **Informe en PDF:** no está empezado. El material base está en `BITACORA.md`.
-- [ ] **Prueba final con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada.
-- [ ] **`requirements.txt`:** las versiones no están fijadas.
-- [ ] **ZIP de entrega:** el CSV y `chroma_db/` superan los 40 MB. Hay que definir con los docentes cómo se evalúa.
+- [ ] **Informe:** completar los `[PENDIENTE]` (integrantes, opcionales y revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF.
+- [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
+- [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
+- [ ] **ZIP de entrega:** el CSV (145 MB) y `chroma_db/` (221 MB) superan los 40 MB. Hay que definir con los docentes cómo se evalúa.
 - [ ] **Integración:** estos cambios están en `feature/calidad-respuestas`; falta mergearlos a `develop` y después a `main`.
+- [ ] **Defensa y presentación oral:** preparar entre el 16 y el 27 de noviembre.
 
 A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 y hasta 2 en la página 4.
 

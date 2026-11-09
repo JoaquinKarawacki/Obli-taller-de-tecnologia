@@ -149,6 +149,11 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Fallas del modelo:** `invocar_llm` reintenta el 400 "tool call validation failed" y elimina el razonamiento filtrado con `</think>`.
 - **Límites de Groq medidos:** 8000 tokens por minuto, 200.000 por día y 1000 pedidos por día, sumando entrada y salida. Cada llamada pidió entre 2000 y 3000 tokens, y una pregunta con búsqueda hace al menos dos. El cupo diario se recupera de a poco, unos 139 tokens por minuto. `invocar_llm` espera los límites cortos y falla enseguida si se agotó la cuota diaria.
 
+### 2026-11-09 — Notebook ejecutado e informe
+- **Notebook:** `obligatorio_agentic_rag.ipynb` se ejecutó completo con Groq en 11 minutos, sin errores. Resultado: 12 de 12 decisiones de tools correctas y 33 segundos promedio por consulta. Las cifras de las respuestas se verificaron contra los documentos.
+- **Informe:** borrador en `INFORME.md`, escrito en Markdown para versionarlo con el código. Se pasa a PDF con Chrome.
+- **Dependencias:** se fijaron en `requirements.txt` las versiones que funcionaron con Python 3.14.3.
+
 ---
 
 ## Temática / dataset — DECIDIDO
