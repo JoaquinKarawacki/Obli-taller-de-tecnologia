@@ -143,7 +143,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 - [x] Comparar modelos de embeddings (sección 12 del notebook).
 - [x] Comparar estrategias de chunking/recuperación (sección 12 del notebook).
 - [ ] Comparar LLMs.
-- [ ] API (FastAPI) o interfaz (Gradio).
+- [x] API con FastAPI (`src/api.py`, sección 12.6 del notebook).
 
 ---
 

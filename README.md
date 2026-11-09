@@ -15,7 +15,7 @@ Hecho:
 - [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs. 12 de 12 decisiones de tools correctas.
 - [x] **Informe:** borrador completo en `INFORME.md`.
 - [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
-- [x] **Opcionales:** experimentos de chunking, recuperación y embeddings en la sección 12 del notebook. Faltan, si da el tiempo, comparar LLMs y la interfaz con Gradio.
+- [x] **Opcionales:** experimentos de chunking, recuperación y embeddings, y una API con FastAPI (`src/api.py`), en la sección 12 del notebook. Falta, si da el tiempo, comparar LLMs.
 
 Falta terminar:
 
@@ -37,7 +37,7 @@ A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 
 - **Groq** (`qwen/qwen3.8-27b`) — LLM, gratis
 - **sentence-transformers** (`multilingual-e5-small`) — embeddings locales, en español
 - **ChromaDB** — base vectorial persistente
-- **Gradio** — interfaz de chat (demo)
+- **FastAPI** — API REST del agente (opcional)
 
 ## Convenciones
 
@@ -85,6 +85,19 @@ Comandos disponibles:
 - `/ayuda` — ver la ayuda
 - `/salir` — terminar
 
+### API REST (opcional)
+
+El mismo agente también se puede usar por HTTP:
+
+```bash
+uvicorn src.api:app
+```
+
+La documentación interactiva queda en http://127.0.0.1:8000/docs. Endpoints: `GET /salud`,
+`POST /chat` (con `user_id`, `mensaje` y, para continuar una conversación, `thread_id`),
+`GET /usuarios/{user_id}/conversaciones`, `GET /usuarios/{user_id}/conversaciones/{thread_id}` y
+`GET /usuarios/{user_id}/recuerdos`.
+
 ## Estructura
 
 ```
@@ -102,6 +115,7 @@ Comandos disponibles:
 │   ├── agente.py        # Fase 4: grafo LangGraph
 │   ├── memoria.py       # Fase 5: memoria corto/largo plazo
 │   ├── chatbot.py       # Fase 6: loop de conversación
+│   ├── api.py           # opcional: API REST con FastAPI
 │   └── experimentos.py  # opcionales: chunking, recuperación y embeddings
 ├── scripts/
 │   ├── consolidar_dataset.py

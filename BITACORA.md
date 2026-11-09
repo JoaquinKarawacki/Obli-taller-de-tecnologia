@@ -166,6 +166,12 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - El umbral 0,68 corta 6 de 8 consultas ajenas sin perder pertinentes.
 - **Mejoras propuestas, sin implementar:** escribir la consulta de la tool en inglés, completar siempre `titulo_paper`, y pasar a e5-base si se reindexa.
 
+### 2026-11-09 — Opcional: API con FastAPI
+- **Decisión:** `src/api.py` expone el agente por HTTP. Reutiliza `construir_agente` y las memorias, sin duplicar lógica. Se eligió FastAPI antes que Gradio porque ya venía instalado (dependencia de Gradio) y una API muestra la integración con otras aplicaciones. Gradio no se vio en clase y queda como posible interfaz sobre la API.
+- **Diseño:** el agente se construye una vez en el `lifespan`; los endpoints son `def` para que corran en un pool de hilos (usuarios en paralelo); un `thread_id` que no está en el índice del usuario da 404, la misma regla que `/retomar`; la entrada se valida con Pydantic (422), y la cuota de Groq agotada se informa con 429.
+- **Pruebas:** con `TestClient` (sección 12.6 del notebook) y con `uvicorn` real (`/salud` y `/docs` responden).
+- **Problema encontrado, sin resolver:** en una prueba, ante "Me llamo Ana y trabajo en un banco, recordalo", el agente respondió "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`, y el recuerdo no se guardó. No es un problema de la API: es el LLM afirmando una acción que no hizo. En la ejecución del notebook de la mañana el recuerdo sí se guardó, así que es intermitente. Hay que revisarlo con la cuota renovada.
+
 ---
 
 ## Temática / dataset — DECIDIDO

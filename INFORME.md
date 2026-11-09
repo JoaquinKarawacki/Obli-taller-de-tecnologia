@@ -259,18 +259,20 @@ Verificamos contra los documentos los datos de las respuestas:
 - Re-ranking de los fragmentos recuperados y búsqueda híbrida (semántica y por palabras clave).
 - Resúmenes jerárquicos por sección para documentos largos.
 - Actualizar y borrar recuerdos, y agregar memoria episódica.
-- Interfaz web con Gradio o una API con FastAPI.
+- Interfaz web (por ejemplo con Gradio) sobre la API.
 
 **Opcionales de la letra (sección 12 del notebook):**
 
-Se desarrollaron los dos opcionales que corresponden a temas vistos en clase: estrategias de chunking y de recuperación, y comparación de modelos de embeddings. Se evaluaron sin el LLM, con 20 preguntas sobre los cinco papers en español y en inglés, midiendo si se recupera la página que contiene la respuesta (acierto@4 y MRR).
+Se desarrollaron tres opcionales. Los dos que corresponden a temas vistos en clase son las estrategias de chunking y de recuperación y la comparación de modelos de embeddings; se evaluaron sin el LLM, con 20 preguntas sobre los cinco papers en español y en inglés, midiendo si se recupera la página que contiene la respuesta (acierto@4 y MRR).
 
 - **Chunking:** se compararon el corte recursivo con cuatro tamaños, sin solapamiento, por oraciones y semántico. Ninguna estrategia mejoró de forma clara (diferencias de una a tres preguntas), así que se mantiene 800/100.
 - **Recuperación:** buscar dentro del paper correcto es lo que más mejora (de 45% a 60% en español y de 70% a 85% en inglés), lo que respalda el filtro `titulo_paper`. MMR no fue una mejora estable y top-8 duplica los tokens. El umbral 0,68 no perdió preguntas pertinentes.
 - **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa unas tres veces más lento; se mantiene e5-small por costo.
 - **Hallazgo principal:** las preguntas en español recuperan peor que las mismas en inglés. Escribir la consulta de la tool en inglés es una mejora barata que queda propuesta, porque hay que validarla con el LLM.
 
-[PENDIENTE: comparación de LLMs e interfaz con Gradio, si se llegan a hacer.]
+- **API con FastAPI** (`src/api.py`): expone el mismo agente por HTTP, sin duplicar lógica. Permite conversar (`POST /chat`, que crea o continúa una conversación por `thread_id`), listar conversaciones, leer el historial desde el checkpointer y consultar los recuerdos del usuario. El agente se construye una vez al arrancar; los endpoints corren en un pool de hilos para atender usuarios en paralelo; un usuario no puede leer ni continuar conversaciones de otro (404); y los errores se traducen a códigos HTTP (422 entrada inválida, 429 cuota de Groq agotada, 502 otros errores del LLM). FastAPI genera la documentación interactiva en `/docs`. Se levanta con `uvicorn src.api:app`.
+
+[PENDIENTE: comparación de LLMs, si se llega a hacer.]
 
 ## 8. Uso de inteligencia artificial generativa
 
@@ -292,7 +294,8 @@ copy .env.example .env    # y completar GROQ_API_KEY
 python -m scripts.consolidar_dataset
 python -m scripts.construir_indice
 python -m scripts.construir_indice_papers
-python main.py
+python main.py            # chatbot por consola
+uvicorn src.api:app       # o la API REST, con documentación en /docs
 ```
 
 En esta máquina, construir el índice de los documentos tardó unos 4 minutos y el del dataset, unos 30.
