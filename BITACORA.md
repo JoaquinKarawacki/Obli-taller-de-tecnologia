@@ -154,6 +154,18 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Informe:** borrador en `INFORME.md`, escrito en Markdown para versionarlo con el código. Se pasa a PDF con Chrome.
 - **Dependencias:** se fijaron en `requirements.txt` las versiones que funcionaron con Python 3.14.3.
 
+### 2026-11-09 — Opcionales: chunking, recuperación y embeddings
+- **Decisión:** se desarrollan primero los opcionales que corresponden a temas vistos en clase (chunking y recuperación, embeddings). La comparación de LLMs y la interfaz con Gradio quedan para después. Van en la sección 12 del notebook, con el código en `src/experimentos.py`.
+- **Método:** 20 preguntas sobre los 5 papers, en español y en inglés, con la página de la respuesta verificada en el PDF. Métricas: acierto@4 y MRR por página correcta. 8 consultas ajenas para medir la separación de puntajes. Sin LLM, con Chroma en memoria.
+- **Diferencia con el experimento del 2026-10-01** (quitado en `943a89f`): ese medía si el fragmento contenía una frase, con 9 preguntas. Con frases genéricas como "overfitting" el acierto dependía de dónde aparecía la palabra; por eso ahora se compara la página.
+- **Resultados principales:**
+  - El chunking no cambia la recuperación de forma clara (diferencias de 1 a 3 preguntas). Se mantiene 800/100.
+  - El filtro por paper es lo que más mejora (top-4 de 45% a 60% en español y de 70% a 85% en inglés).
+  - Las preguntas en español aciertan menos que en inglés (45% contra 70% con e5-small).
+  - `multilingual-e5-base` recupera mejor en español (65%), pero indexa unas tres veces más lento. Se mantiene e5-small.
+  - El umbral 0,68 corta 6 de 8 consultas ajenas sin perder pertinentes.
+- **Mejoras propuestas, sin implementar:** escribir la consulta de la tool en inglés, completar siempre `titulo_paper`, y pasar a e5-base si se reindexa.
+
 ---
 
 ## Temática / dataset — DECIDIDO

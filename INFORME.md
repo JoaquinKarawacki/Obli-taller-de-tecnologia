@@ -261,7 +261,16 @@ Verificamos contra los documentos los datos de las respuestas:
 - Actualizar y borrar recuerdos, y agregar memoria episódica.
 - Interfaz web con Gradio o una API con FastAPI.
 
-**Opcionales de la letra:** [PENDIENTE: decidir si se incluye alguno; por ahora ninguno está implementado.]
+**Opcionales de la letra (sección 12 del notebook):**
+
+Se desarrollaron los dos opcionales que corresponden a temas vistos en clase: estrategias de chunking y de recuperación, y comparación de modelos de embeddings. Se evaluaron sin el LLM, con 20 preguntas sobre los cinco papers en español y en inglés, midiendo si se recupera la página que contiene la respuesta (acierto@4 y MRR).
+
+- **Chunking:** se compararon el corte recursivo con cuatro tamaños, sin solapamiento, por oraciones y semántico. Ninguna estrategia mejoró de forma clara (diferencias de una a tres preguntas), así que se mantiene 800/100.
+- **Recuperación:** buscar dentro del paper correcto es lo que más mejora (de 45% a 60% en español y de 70% a 85% en inglés), lo que respalda el filtro `titulo_paper`. MMR no fue una mejora estable y top-8 duplica los tokens. El umbral 0,68 no perdió preguntas pertinentes.
+- **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa unas tres veces más lento; se mantiene e5-small por costo.
+- **Hallazgo principal:** las preguntas en español recuperan peor que las mismas en inglés. Escribir la consulta de la tool en inglés es una mejora barata que queda propuesta, porque hay que validarla con el LLM.
+
+[PENDIENTE: comparación de LLMs e interfaz con Gradio, si se llegan a hacer.]
 
 ## 8. Uso de inteligencia artificial generativa
 

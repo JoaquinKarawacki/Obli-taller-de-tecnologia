@@ -15,6 +15,7 @@ Hecho:
 - [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs. 12 de 12 decisiones de tools correctas.
 - [x] **Informe:** borrador completo en `INFORME.md`.
 - [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
+- [x] **Opcionales:** experimentos de chunking, recuperación y embeddings en la sección 12 del notebook. Faltan, si da el tiempo, comparar LLMs y la interfaz con Gradio.
 
 Falta terminar:
 
@@ -100,7 +101,8 @@ Comandos disponibles:
 │   ├── recuperacion.py  # Fase 3: búsqueda semántica (tool)
 │   ├── agente.py        # Fase 4: grafo LangGraph
 │   ├── memoria.py       # Fase 5: memoria corto/largo plazo
-│   └── chatbot.py       # Fase 6: loop de conversación
+│   ├── chatbot.py       # Fase 6: loop de conversación
+│   └── experimentos.py  # opcionales: chunking, recuperación y embeddings
 ├── scripts/
 │   ├── consolidar_dataset.py
 │   ├── construir_indice.py
