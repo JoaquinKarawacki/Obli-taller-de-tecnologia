@@ -6,7 +6,7 @@
 
 | Integrante | Número de estudiante |
 |---|---|
-| Niclás Castro | 308251 |
+| Nicolás Castro | 308251 |
 | Pedro Morga| 319981  |
 | Joaquín Karawacki  | 325535 |
 
@@ -23,12 +23,14 @@ Desarrollamos un chatbot basado en un *agentic RAG* que responde en español o e
 
 Un agente orquestado con LangGraph decide en cada mensaje si responde directamente o si consulta herramientas: búsqueda semántica en una base vectorial, estadísticas del dataset o memoria del usuario. El sistema mantiene memoria a corto plazo por conversación y memoria a largo plazo por usuario, ambas persistidas en SQLite. Permite pausar y retomar conversaciones y atender varias sesiones en paralelo.
 
-El código está en módulos `.py` dentro de `src/`. El notebook `obligatorio_agentic_rag.ipynb` los importa y muestra el sistema funcionando de punta a punta.
+El código está en módulos `.py` dentro de `src/`. El notebook `obligatorio_agentic_rag.ipynb` los importa y muestra el sistema funcionando de punta a punta. El mismo agente se puede usar por consola (`main.py`) o por HTTP, con una API hecha con FastAPI.
+
+Desarrollamos los cuatro opcionales de la letra: la comparación de estrategias de chunking y de recuperación, la comparación de modelos de embeddings, la API y la comparación de LLMs. Están en la sección 12 del notebook y se resumen en la sección 7 de este informe.
 
 ## 2. Arquitectura
 
 ```
-Usuario -> chatbot (consola o notebook)
+Usuario -> chatbot (consola o notebook) o API REST (FastAPI)
               |
               v
    Grafo LangGraph, escrito a mano:
@@ -58,6 +60,7 @@ Usuario -> chatbot (consola o notebook)
 | Agente | `StateGraph` con nodos `agente` y `herramientas` | `src/agente.py` |
 | Memoria | `SqliteSaver` y `SqliteStore` de LangGraph | `src/memoria.py` |
 | Interfaz | Chat por consola con comandos de sesión | `src/chatbot.py`, `main.py` |
+| API (opcional) | API REST con FastAPI sobre el mismo agente | `src/api.py` |
 
 ### 2.2 Flujo de una consulta
 
@@ -79,7 +82,7 @@ Usuario -> chatbot (consola o notebook)
 
 **Base vectorial.** ChromaDB funciona en local, sin cuenta ni clave, y persiste en una carpeta. Así cualquier persona puede ejecutar el sistema sin nuestras credenciales y sin depender de la red. Usamos colecciones separadas para correos y documentos, con metadatos para citar y filtrar: título y página en los documentos; corpus, remitente y etiqueta en los correos.
 
-**LLM.** Groq ofrece un plan gratuito y respuestas rápidas. Primero elegimos `llama-3.3-70b-versatile`, pero Groq lo retiró. Comparamos `qwen/qwen3.8-27b` con `openai/gpt-oss-120b` usando nuestras tools: Qwen eligió bien las herramientas y no inventó argumentos, así que lo adoptamos. Usamos `temperature=0` y sin razonamiento visible, para ahorrar tokens.
+**LLM.** Groq ofrece un plan gratuito y respuestas rápidas. Primero elegimos `llama-3.3-70b-versatile`, pero Groq lo retiró. Comparamos `qwen/qwen3.8-27b` con `openai/gpt-oss-120b` usando nuestras tools: Qwen eligió bien las herramientas y no inventó argumentos, así que lo adoptamos. Después lo confirmamos con una comparación formal de los tres modelos disponibles (sección 7 y sección 12.7 del notebook). Usamos `temperature=0` y sin razonamiento visible, para ahorrar tokens.
 
 **Agente.** La letra prohíbe `create_react_agent()` y otras abstracciones que oculten la lógica. Construimos el grafo a mano y tampoco usamos `ToolNode` ni `tools_condition`, que vienen del mismo módulo `langgraph.prebuilt`. No hay un nodo router aparte: el LLM, guiado por el prompt, decide el tipo de consulta. Un router con otra llamada al LLM duplicaría el consumo de tokens sin agregar capacidades.
 
@@ -171,6 +174,7 @@ Aplicamos varias capas:
 3. **Errores explícitos:** si una fuente no está disponible, la tool devuelve `ERROR` en lugar de "no hay resultados".
 4. **Prompt:** responder solo con evidencia, citar la fuente y admitir cuando falta información.
 5. **Búsqueda en seguimientos:** toda pregunta de seguimiento que pida un dato nuevo exige volver a buscar.
+6. **Control de acciones:** si la respuesta dice que guardó un dato del usuario pero en ese turno no se llamó a `guardar_recuerdo`, el nodo `agente` se lo indica al LLM y pide la respuesta de nuevo, una sola vez. Evita que el sistema afirme haber hecho algo que no hizo.
 
 ## 5. Desafíos y soluciones
 
@@ -189,6 +193,7 @@ Aplicamos varias capas:
 | Con ese recorte, una pregunta de seguimiento inventó datos | El prompt exige buscar todo dato nuevo en los seguimientos |
 | El modelo a veces armaba mal una tool o filtraba su razonamiento | Reintento y limpieza de la respuesta |
 | `database is locked` al usar checkpointer y store sobre el mismo archivo | Conexiones SQLite en modo autocommit |
+| El agente decía "lo guardé" sin llamar a `guardar_recuerdo`, y el dato se perdía | Regla y ejemplo en el prompt, y un control en el código que detecta esa afirmación y pide la respuesta de nuevo |
 
 ## 6. Pruebas y resultados
 
@@ -240,6 +245,7 @@ Verificamos contra los documentos los datos de las respuestas:
 - **Pregunta sin búsqueda:** "¿Qué es el few-shot learning?" se respondió con conocimiento general y la nota aclaratoria, aunque el tema está en el paper de GPT-3. Lo esperable era buscar.
 - **Búsqueda sin reintento:** al pedir un ejemplo de phishing bancario, el agente dijo que no encontró uno específico y ofreció buscar de nuevo, en lugar de reformular la búsqueda por su cuenta. En otra prueba, con otra consulta, encontró un correo que suplanta a Bank of America.
 - **Interpretaciones de más:** en el ranking de dominios, el agente sugirió por qué aparecen `wikipedia.org` y `merriam-webster.com`. Lo presentó como probable, pero no surge de los datos.
+- **Recuerdo no guardado (corregido):** en pruebas posteriores, ante "Me llamo Ana y trabajo en un banco, recordalo", el agente respondía "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`, y el dato no quedaba guardado. Pasaba siempre con ese mensaje, por `temperature=0`. Tampoco guardaba "Soy desarrollador y me interesa la seguridad informática". Se corrigió en dos capas: el prompt ahora exige guardar antes de responder y prohíbe afirmar un guardado sin la tool, con un ejemplo few-shot; y un control en el nodo `agente` detecta la afirmación sin llamada y pide la respuesta de nuevo. Después de la corrección, los cinco mensajes de prueba guardaron su recuerdo y el pedido de guardar una contraseña se rechazó. En una de las pruebas fue el control el que resolvió el caso.
 - **Demo de retomar:** en el chat guionado, la pregunta "¿Cómo me llamo?" también podía responderse con la memoria a largo plazo. La prueba concluyente de la memoria a corto plazo es la del reinicio, en la tabla anterior.
 
 ## 7. Limitaciones y mejoras posibles
@@ -251,17 +257,32 @@ Verificamos contra los documentos los datos de las respuestas:
 - **Páginas:** las citas usan el número de página del PDF, que puede no coincidir con el número impreso, sobre todo en el libro.
 - **Etiquetas del dataset:** lo marcado como phishing también incluye spam común, y el remitente falta en cerca del 40% de los correos.
 - **Control de alucinaciones:** reduce el riesgo, pero depende del prompt y no lo elimina.
+- **Idioma al guardar recuerdos:** si el usuario cuenta un dato personal en inglés, el agente lo guarda pero a veces confirma en español.
 
 **Mejoras posibles:**
 
+- Escribir en inglés la consulta de `buscar_en_papers`: en los experimentos de la sección 12, las mismas preguntas recuperan la página correcta en 70% de los casos en inglés y en 45% en español.
+- Completar siempre `titulo_paper` cuando la pregunta nombra un paper: buscar dentro del paper correcto fue lo que más mejoró la recuperación.
+- Pasar a `multilingual-e5-base` y recalibrar el umbral, si se puede pagar una reindexación entre dos y tres veces y media más lenta.
 - Verificar cada respuesta contra los fragmentos con un nodo de validación, cuando la cuota lo permita.
 - Reformular automáticamente la búsqueda cuando los fragmentos no responden la pregunta.
 - Re-ranking de los fragmentos recuperados y búsqueda híbrida (semántica y por palabras clave).
 - Resúmenes jerárquicos por sección para documentos largos.
 - Actualizar y borrar recuerdos, y agregar memoria episódica.
-- Interfaz web con Gradio o una API con FastAPI.
+- Interfaz web (por ejemplo con Gradio) sobre la API.
 
-**Opcionales de la letra:** [PENDIENTE: decidir si se incluye alguno; por ahora ninguno está implementado.]
+**Opcionales de la letra (sección 12 del notebook):**
+
+Se desarrollaron los cuatro opcionales. Los dos que corresponden a temas vistos en clase son las estrategias de chunking y de recuperación y la comparación de modelos de embeddings; se evaluaron sin el LLM, con 20 preguntas sobre los cinco papers en español y en inglés, midiendo si se recupera la página que contiene la respuesta (acierto@4 y MRR).
+
+- **Chunking:** se compararon el corte recursivo con cuatro tamaños, sin solapamiento, por oraciones y semántico. Ninguna estrategia mejoró de forma clara (diferencias de una a tres preguntas), así que se mantiene 800/100.
+- **Recuperación:** buscar dentro del paper correcto es lo que más mejora (de 45% a 60% en español y de 70% a 85% en inglés), lo que respalda el filtro `titulo_paper`. MMR no fue una mejora estable y top-8 duplica los tokens. El umbral 0,68 no perdió preguntas pertinentes.
+- **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa entre dos y tres veces y media más lento; se mantiene e5-small por costo.
+- **Hallazgo principal:** las preguntas en español recuperan peor que las mismas en inglés. Escribir la consulta de la tool en inglés es una mejora barata que queda propuesta, porque hay que validarla con el LLM.
+
+- **API con FastAPI** (`src/api.py`): expone el mismo agente por HTTP, sin duplicar lógica. Permite conversar (`POST /chat`, que crea o continúa una conversación por `thread_id`), listar conversaciones, leer el historial desde el checkpointer y consultar los recuerdos del usuario. El agente se construye una vez al arrancar; los endpoints corren en un pool de hilos para atender usuarios en paralelo; un usuario no puede leer ni continuar conversaciones de otro (404); y los errores se traducen a códigos HTTP (422 entrada inválida, 429 cuota de Groq agotada, 502 otros errores del LLM). FastAPI genera la documentación interactiva en `/docs`. Se levanta con `uvicorn src.api:app`.
+
+- **Comparación de LLMs** (`src/comparacion_llms.py`): el mismo agente, cambiando solo el LLM, sobre 10 casos de la batería, con `qwen/qwen3.8-27b`, `openai/gpt-oss-120b` y `openai/gpt-oss-20b`. Los tres eligieron bien las tools en los 10 casos, así que las diferencias están en la respuesta. En la revisión manual, Qwen no tuvo observaciones (10 de 10). gpt-oss-120b, el más rápido (20,7 s de media contra 30,7), perdió el contexto en el seguimiento: interpretó "modelo big" como GPT-3 y respondió con un dato real de otro paper. Los dos gpt-oss respondieron en español a una pregunta en inglés, y gpt-oss-20b presentó como bancario un correo que no lo era. El costo fue parecido, unos 40.000 tokens de entrada por batería. Se mantiene Qwen. Los resultados quedan guardados en `resultados/comparacion_llms.json`, para que el notebook los muestre sin gastar cuota.
 
 ## 8. Uso de inteligencia artificial generativa
 
@@ -283,7 +304,8 @@ copy .env.example .env    # y completar GROQ_API_KEY
 python -m scripts.consolidar_dataset
 python -m scripts.construir_indice
 python -m scripts.construir_indice_papers
-python main.py
+python main.py            # chatbot por consola
+uvicorn src.api:app       # o la API REST, con documentación en /docs
 ```
 
 En esta máquina, construir el índice de los documentos tardó unos 4 minutos y el del dataset, unos 30.

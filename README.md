@@ -15,10 +15,12 @@ Hecho:
 - [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs. 12 de 12 decisiones de tools correctas.
 - [x] **Informe:** borrador completo en `INFORME.md`.
 - [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
+- [x] **Opcionales:** los cuatro de la letra, en la sección 12 del notebook: experimentos de chunking, recuperación y embeddings, una API con FastAPI (`src/api.py`) y la comparación de LLMs (`src/comparacion_llms.py`).
 
 Falta terminar:
 
-- [ ] **Informe:** completar los `[PENDIENTE]` (integrantes, opcionales y revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF.
+- [ ] **Notebook:** volver a ejecutarlo completo antes de entregar. Se ejecutó el 9/11, antes del cambio de prompt y del control de recuerdos del 10/11.
+- [ ] **Informe:** completar los `[PENDIENTE]` (revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF.
 - [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
 - [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
 - [ ] **ZIP de entrega:** el CSV (145 MB) y `chroma_db/` (221 MB) superan los 40 MB. Hay que definir con los docentes cómo se evalúa.
@@ -36,7 +38,7 @@ A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 
 - **Groq** (`qwen/qwen3.8-27b`) — LLM, gratis
 - **sentence-transformers** (`multilingual-e5-small`) — embeddings locales, en español
 - **ChromaDB** — base vectorial persistente
-- **Gradio** — interfaz de chat (demo)
+- **FastAPI** — API REST del agente (opcional)
 
 ## Convenciones
 
@@ -84,6 +86,19 @@ Comandos disponibles:
 - `/ayuda` — ver la ayuda
 - `/salir` — terminar
 
+### API REST (opcional)
+
+El mismo agente también se puede usar por HTTP:
+
+```bash
+uvicorn src.api:app
+```
+
+La documentación interactiva queda en http://127.0.0.1:8000/docs. Endpoints: `GET /salud`,
+`POST /chat` (con `user_id`, `mensaje` y, para continuar una conversación, `thread_id`),
+`GET /usuarios/{user_id}/conversaciones`, `GET /usuarios/{user_id}/conversaciones/{thread_id}` y
+`GET /usuarios/{user_id}/recuerdos`.
+
 ## Estructura
 
 ```
@@ -100,7 +115,11 @@ Comandos disponibles:
 │   ├── recuperacion.py  # Fase 3: búsqueda semántica (tool)
 │   ├── agente.py        # Fase 4: grafo LangGraph
 │   ├── memoria.py       # Fase 5: memoria corto/largo plazo
-│   └── chatbot.py       # Fase 6: loop de conversación
+│   ├── chatbot.py       # Fase 6: loop de conversación
+│   ├── api.py           # opcional: API REST con FastAPI
+│   ├── comparacion_llms.py  # opcional: comparación de LLMs
+│   └── experimentos.py  # opcionales: chunking, recuperación y embeddings
+├── resultados/          # resultados guardados de la comparación de LLMs
 ├── scripts/
 │   ├── consolidar_dataset.py
 │   ├── construir_indice.py

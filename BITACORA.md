@@ -154,6 +154,38 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Informe:** borrador en `INFORME.md`, escrito en Markdown para versionarlo con el código. Se pasa a PDF con Chrome.
 - **Dependencias:** se fijaron en `requirements.txt` las versiones que funcionaron con Python 3.14.3.
 
+### 2026-11-09 — Opcionales: chunking, recuperación y embeddings
+- **Decisión:** se desarrollan primero los opcionales que corresponden a temas vistos en clase (chunking y recuperación, embeddings). La comparación de LLMs y la interfaz con Gradio quedan para después. Van en la sección 12 del notebook, con el código en `src/experimentos.py`.
+- **Método:** 20 preguntas sobre los 5 papers, en español y en inglés, con la página de la respuesta verificada en el PDF. Métricas: acierto@4 y MRR por página correcta. 8 consultas ajenas para medir la separación de puntajes. Sin LLM, con Chroma en memoria.
+- **Diferencia con el experimento del 2026-10-01** (quitado en `943a89f`): ese medía si el fragmento contenía una frase, con 9 preguntas. Con frases genéricas como "overfitting" el acierto dependía de dónde aparecía la palabra; por eso ahora se compara la página.
+- **Resultados principales:**
+  - El chunking no cambia la recuperación de forma clara (diferencias de 1 a 3 preguntas). Se mantiene 800/100.
+  - El filtro por paper es lo que más mejora (top-4 de 45% a 60% en español y de 70% a 85% en inglés).
+  - Las preguntas en español aciertan menos que en inglés (45% contra 70% con e5-small).
+  - `multilingual-e5-base` recupera mejor en español (65%), pero indexa entre dos y tres veces y media más lento. Se mantiene e5-small.
+  - El umbral 0,68 corta 6 de 8 consultas ajenas sin perder pertinentes.
+- **Mejoras propuestas, sin implementar:** escribir la consulta de la tool en inglés, completar siempre `titulo_paper`, y pasar a e5-base si se reindexa.
+
+### 2026-11-09 — Opcional: API con FastAPI
+- **Decisión:** `src/api.py` expone el agente por HTTP. Reutiliza `construir_agente` y las memorias, sin duplicar lógica. Se eligió FastAPI antes que Gradio porque ya venía instalado (dependencia de Gradio) y una API muestra la integración con otras aplicaciones. Gradio no se vio en clase y queda como posible interfaz sobre la API.
+- **Diseño:** el agente se construye una vez en el `lifespan`; los endpoints son `def` para que corran en un pool de hilos (usuarios en paralelo); un `thread_id` que no está en el índice del usuario da 404, la misma regla que `/retomar`; la entrada se valida con Pydantic (422), y la cuota de Groq agotada se informa con 429.
+- **Pruebas:** con `TestClient` (sección 12.6 del notebook) y con `uvicorn` real (`/salud` y `/docs` responden).
+- **Problema encontrado (resuelto el 2026-11-10, ver abajo):** en una prueba, ante "Me llamo Ana y trabajo en un banco, recordalo", el agente respondió "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`, y el recuerdo no se guardó. No es un problema de la API: es el LLM afirmando una acción que no hizo. En la ejecución del notebook de la mañana el recuerdo sí se guardó, así que es intermitente. Hay que revisarlo con la cuota renovada.
+
+### 2026-11-10 — Recuerdos afirmados sin guardar
+- **Problema:** ante "Me llamo Ana y trabajo en un banco, recordalo" el LLM respondía "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`. Con `temperature=0` pasaba siempre con ese mensaje. Además, "Soy desarrollador y me interesa la seguridad informática" no se guardaba. Toca dos requisitos: decidir qué guardar en memoria y no afirmar información falsa.
+- **Primer intento, solo prompt:** regla "un dato solo queda guardado si llamás a guardar_recuerdo; nunca digas que lo guardaste sin llamarla" y un ejemplo few-shot. Arregló el segundo caso, pero no el primero, y el modelo copiaba la frase de respuesta del ejemplo, incluso a un mensaje en inglés.
+- **Solución:** además del prompt (con el ejemplo sin frase de respuesta fija), un control en `nodo_agente`: si la respuesta final dice haber guardado algo (`AFIRMA_GUARDADO`) y en el turno no hubo llamada a `guardar_recuerdo`, se le avisa al LLM y se pide la respuesta de nuevo, una sola vez. El aviso no queda en el historial. Solo gasta una llamada extra cuando se dispara.
+- **Validación con Groq:** cinco mensajes con datos personales (español e inglés) guardaron su recuerdo; "Recordá que mi contraseña es 1234" se rechazó. En una corrida, el control fue el que resolvió el caso de Ana. Regresión con tres casos de la batería (papers, sin evidencia, estadísticas): mismas tools que antes y sin recuerdos guardados de más.
+- **Pendiente:** el notebook se ejecutó con el prompt anterior; hay que volver a ejecutarlo antes de entregar. A un mensaje personal en inglés, el agente a veces confirma en español.
+
+### 2026-11-10 — Opcional: comparación de LLMs
+- **Método:** mismo agente con tres LLMs de Groq (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`), 10 casos de la batería. Se mide si usó las tools esperadas, si la respuesta contiene el dato verificable, el tiempo, las llamadas y los tokens (con un callback). Además se leyeron todas las respuestas. `construir_agente` y `crear_llm` aceptan ahora el modelo como parámetro; gpt-oss no permite apagar el razonamiento, así que usa el nivel bajo.
+- **Ejecución:** Groq cuenta la cuota por modelo, así que los tres corrieron en paralelo. La primera corrida falló antes de llamar al LLM: el `user_id` llevaba el nombre del modelo, y el store no admite puntos en el namespace; además, inicializar la misma base SQLite desde tres hilos a la vez fallaba. Se corrigió limpiando el `user_id` y creando las memorias antes de lanzar los hilos.
+- **Verificación:** el patrón de "42.891" no aceptaba el espacio fino que usa gpt-oss ("42 891"), y daba falsos negativos; se corrigió.
+- **Resultados:** tools correctas 10 de 10 en los tres. En la revisión manual: Qwen 10 de 10 sin observaciones; gpt-oss-120b 7 de 10 (perdió el contexto del seguimiento y respondió sobre GPT-3, contestó en español a la pregunta en inglés, dejó marcas de cita "【1†…】"); gpt-oss-20b 8 de 10 (idioma, y presentó como bancario un correo que no lo era). gpt-oss-120b fue el más rápido (20,7 s de media contra 30,7).
+- **Decisión:** se mantiene Qwen. Los resultados quedan en `resultados/comparacion_llms.json` y la sección 12.7 del notebook los lee.
+
 ---
 
 ## Temática / dataset — DECIDIDO
