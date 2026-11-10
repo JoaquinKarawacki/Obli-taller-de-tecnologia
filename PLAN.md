@@ -142,7 +142,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 ### Fase 8 — Opcionales (si da el tiempo)
 - [x] Comparar modelos de embeddings (sección 12 del notebook).
 - [x] Comparar estrategias de chunking/recuperación (sección 12 del notebook).
-- [ ] Comparar LLMs.
+- [x] Comparar LLMs (`src/comparacion_llms.py`, sección 12.7 del notebook).
 - [x] API con FastAPI (`src/api.py`, sección 12.6 del notebook).
 
 ---

@@ -162,7 +162,7 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
   - El chunking no cambia la recuperación de forma clara (diferencias de 1 a 3 preguntas). Se mantiene 800/100.
   - El filtro por paper es lo que más mejora (top-4 de 45% a 60% en español y de 70% a 85% en inglés).
   - Las preguntas en español aciertan menos que en inglés (45% contra 70% con e5-small).
-  - `multilingual-e5-base` recupera mejor en español (65%), pero indexa unas tres veces más lento. Se mantiene e5-small.
+  - `multilingual-e5-base` recupera mejor en español (65%), pero indexa entre dos y tres veces y media más lento. Se mantiene e5-small.
   - El umbral 0,68 corta 6 de 8 consultas ajenas sin perder pertinentes.
 - **Mejoras propuestas, sin implementar:** escribir la consulta de la tool en inglés, completar siempre `titulo_paper`, y pasar a e5-base si se reindexa.
 
@@ -178,6 +178,13 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Solución:** además del prompt (con el ejemplo sin frase de respuesta fija), un control en `nodo_agente`: si la respuesta final dice haber guardado algo (`AFIRMA_GUARDADO`) y en el turno no hubo llamada a `guardar_recuerdo`, se le avisa al LLM y se pide la respuesta de nuevo, una sola vez. El aviso no queda en el historial. Solo gasta una llamada extra cuando se dispara.
 - **Validación con Groq:** cinco mensajes con datos personales (español e inglés) guardaron su recuerdo; "Recordá que mi contraseña es 1234" se rechazó. En una corrida, el control fue el que resolvió el caso de Ana. Regresión con tres casos de la batería (papers, sin evidencia, estadísticas): mismas tools que antes y sin recuerdos guardados de más.
 - **Pendiente:** el notebook se ejecutó con el prompt anterior; hay que volver a ejecutarlo antes de entregar. A un mensaje personal en inglés, el agente a veces confirma en español.
+
+### 2026-11-10 — Opcional: comparación de LLMs
+- **Método:** mismo agente con tres LLMs de Groq (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`), 10 casos de la batería. Se mide si usó las tools esperadas, si la respuesta contiene el dato verificable, el tiempo, las llamadas y los tokens (con un callback). Además se leyeron todas las respuestas. `construir_agente` y `crear_llm` aceptan ahora el modelo como parámetro; gpt-oss no permite apagar el razonamiento, así que usa el nivel bajo.
+- **Ejecución:** Groq cuenta la cuota por modelo, así que los tres corrieron en paralelo. La primera corrida falló antes de llamar al LLM: el `user_id` llevaba el nombre del modelo, y el store no admite puntos en el namespace; además, inicializar la misma base SQLite desde tres hilos a la vez fallaba. Se corrigió limpiando el `user_id` y creando las memorias antes de lanzar los hilos.
+- **Verificación:** el patrón de "42.891" no aceptaba el espacio fino que usa gpt-oss ("42 891"), y daba falsos negativos; se corrigió.
+- **Resultados:** tools correctas 10 de 10 en los tres. En la revisión manual: Qwen 10 de 10 sin observaciones; gpt-oss-120b 7 de 10 (perdió el contexto del seguimiento y respondió sobre GPT-3, contestó en español a la pregunta en inglés, dejó marcas de cita "【1†…】"); gpt-oss-20b 8 de 10 (idioma, y presentó como bancario un correo que no lo era). gpt-oss-120b fue el más rápido (20,7 s de media contra 30,7).
+- **Decisión:** se mantiene Qwen. Los resultados quedan en `resultados/comparacion_llms.json` y la sección 12.7 del notebook los lee.
 
 ---
 

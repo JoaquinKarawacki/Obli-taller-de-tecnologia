@@ -1,0 +1,473 @@
+{
+  "fecha": "2026-11-10",
+  "resultados": [
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "small-talk",
+      "pregunta": "Hola! cómo andás?",
+      "tools": [],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 1.1,
+      "llamadas LLM": 1,
+      "tokens entrada": 2033,
+      "tokens salida": 21,
+      "error": "",
+      "respuesta": "¡Hola! Muy bien, gracias. ¿Y vos? ¿En qué te puedo ayudar hoy?"
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "general",
+      "pregunta": "¿Cuál es la capital de Francia?",
+      "tools": [],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 0.9,
+      "llamadas LLM": 1,
+      "tokens entrada": 2035,
+      "tokens salida": 25,
+      "error": "",
+      "respuesta": "La capital de Francia es París.\n(Nota: esto es conocimiento general, no sale de los documentos cargados.)"
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "papers ES",
+      "pregunta": "¿Cuántos parámetros tiene GPT-3?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 35.2,
+      "llamadas LLM": 2,
+      "tokens entrada": 4898,
+      "tokens salida": 140,
+      "error": "",
+      "respuesta": "GPT-3 tiene **175 mil millones (175B) de parámetros** (Language Models are Few-Shot Learners, pág. 40).\n\nEl paper también menciona que entrenaron una serie de modelos más pequeños, de 125 millones a 13 mil millones de parámetros, para comparar su rendimiento con el de GPT-3 (pág. 6)."
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "papers EN",
+      "pregunta": "Which optimizer did the Transformer use, and with which beta values?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 26.2,
+      "llamadas LLM": 2,
+      "tokens entrada": 5163,
+      "tokens salida": 117,
+      "error": "",
+      "respuesta": "The Transformer used the **Adam optimizer** with **β1 = 0.9** and **β2 = 0.98** (and ϵ = 10⁻⁹), as stated in \"Attention Is All You Need,\" pág. 7 (Section 5.3, Optimizer)."
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "sin evidencia",
+      "pregunta": "¿Qué dice el paper de Attention sobre el mundial de fútbol 2022?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 34.8,
+      "llamadas LLM": 2,
+      "tokens entrada": 4174,
+      "tokens salida": 137,
+      "error": "",
+      "respuesta": "No tengo información sobre el mundial de fútbol 2022 en el paper de Attention: los fragmentos recuperados no mencionan nada sobre fútbol. Ese paper se enfoca en el mecanismo de atención (attention) para modelos de lenguaje, no en temas deportivos.\n\nSi querés, puedo buscar en el paper temas relacionados con su contenido real (por ejemplo, cómo funciona la atención, la arquitectura Transformer, etc.)."
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "estadística",
+      "pregunta": "¿Cuántos correos de phishing hay en el dataset?",
+      "tools": [
+        "estadisticas_dataset"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 37.6,
+      "llamadas LLM": 2,
+      "tokens entrada": 4348,
+      "tokens salida": 140,
+      "error": "",
+      "respuesta": "En el dataset hay **42.891 correos de phishing** (de un total de 82.486; los otros 39.595 son legítimos).\n\nDesglose por corpus de origen:\n- CEAS_08: 21.842\n- Enron: 13.976\n- SpamAssasin: 1.718\n- Nigerian_Fraud: 3.332\n- Nazario: 1.565\n- Ling: 458"
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "dataset",
+      "pregunta": "Mostrame un ejemplo de correo de phishing bancario",
+      "tools": [
+        "buscar_en_dataset"
+      ],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 43.3,
+      "llamadas LLM": 2,
+      "tokens entrada": 4890,
+      "tokens salida": 437,
+      "error": "",
+      "respuesta": "No encontré un ejemplo de phishing **bancario** específico en el dataset. Los fragmentos recuperados son de phishing, pero de otros tipos:\n\n1. **Phishing de crédito** (corpus SpamAssasin): remitente \"HILARIA CHUNG\" <alksjdwieytgfbn@msn.com>, asunto \"I never sent you this - keep it hush hush! :)\". Promete \"reparar tu crédito online\" y pide hacer clic en un enlace. Señales típicas: remitente de dominio gratuito (msn.com), promesas exageradas y enlaces sospechosos.\n\n2. **Phishing de contraseña** (corpus Nazario): remitente Lawrence McDevitt <lmcdevitt@ohlone.edu>, asunto \"RE: HELP_DESK_SERVICE\". Dice \"Your Password Has Expired\" y pide \"CLICK HERE To Verify\". Señales: urgencia, enlace genérico y remitente que no coincide con un servicio real.\n\n3. **Phishing de verificación de cuenta** (corpus Nazario): remitente Email Admin <noreply@accountadministrator.com>, asunto \"(Warning)Please Verify Your Account\". Avisa de \"actividad inusual\" y pide completar una verificación por un enlace. Señales: dominio genérico (accountadministrator.com), saludo con el correo de la víctima y presión para actuar.\n\n4. **Spam de venta de herramientas de ataque** (corpus Nazario): ofrece \"BANK LOGING PAGE\", \"CC, CVV\", cuentas robadas, etc. No es phishing bancario en sí, sino un anuncio de venta de datos y herramientas maliciosas.\n\nSi querés, puedo buscar de nuevo con otras palabras (por ejemplo \"bank account\", \"wire transfer\", \"card number\") para ver si hay algún correo de phishing bancario más específico en el dataset."
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "contexto",
+      "pregunta": "¿Qué es multi-head attention?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 42.9,
+      "llamadas LLM": 2,
+      "tokens entrada": 5054,
+      "tokens salida": 465,
+      "error": "",
+      "respuesta": "El **multi-head attention** es una variante del mecanismo de atención que, en lugar de usar una sola función de atención con claves, valores y consultas de dimensión completa (d_model), ejecuta **varias funciones de atención en paralelo** (los \"heads\" o cabezas).\n\nSegún el paper *Attention Is All You Need*:\n\n- **Cómo funciona:** las consultas (Q), claves (K) y valores (V) se proyectan linealmente **h veces** con matrices aprendidas distintas, hacia dimensiones d_k, d_k y d_v respectivamente. Sobre cada versión proyectada se aplica la función de atención, y luego las salidas se concatenan y se proyectan una vez más para obtener el resultado final (pág. 4-5).\n\n- **Fórmula:**\n  MultiHead(Q, K, V) = Concat(head₁, ..., head_h)·W^O, donde cada head_i = Attention(Q·W^Q_i, K·W^K_i, V·W^V_i) (pág. 5).\n\n- **Ventaja principal:** permite al modelo **atender conjuntamente a información de diferentes subespacios de representación y en diferentes posiciones**. Con una sola cabeza, el promedio (averaging) inhibiría esa capacidad (pág. 5).\n\n- **Costo computacional:** en el paper se usan **h = 8 cabezas**, con d_k = d_v = d_model/h = 64. Al reducir la dimensión de cada cabeza, el costo total de cómputo es similar al de una atención de una sola cabeza con dimensión completa (pág. 5).\n\n- **Evidencia de que cada cabeza hace cosas distintas:** las visualizaciones muestran que las cabezas aprenden a realizar tareas diferentes; por ejemplo, varias cabezas siguen dependencias de larga distancia (como el verbo \"making\" completando la frase \"making... more difficult\") (pág. 3, 13-15)."
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "seguimiento",
+      "pregunta": "¿Y cuántas cabezas usa el modelo big?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 49.3,
+      "llamadas LLM": 2,
+      "tokens entrada": 5821,
+      "tokens salida": 216,
+      "error": "",
+      "respuesta": "El modelo **big** usa **16 cabezas** (h = 16).\n\nSegún la Tabla 3 de *Attention Is All You Need* (pág. 9), la configuración del modelo big es:\n- **6 capas** (N = 6)\n- **d_model = 1024**\n- **d_ff = 4096**\n- **h = 16 cabezas**\n- Pdrop = 0.3\n- 300K pasos de entrenamiento\n\nComo referencia, el modelo base (base) usa 8 cabezas con d_model = 512, mientras que el big duplica la dimensión y el número de cabezas (pág. 9)."
+    },
+    {
+      "modelo": "qwen/qwen3.8-27b",
+      "tipo": "memoria",
+      "pregunta": "Me llamo Ana y trabajo en un banco, recordalo",
+      "tools": [
+        "guardar_recuerdo"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 36.1,
+      "llamadas LLM": 2,
+      "tokens entrada": 4145,
+      "tokens salida": 71,
+      "error": "",
+      "respuesta": "Listo, Ana: guardé que te llamás Ana y que trabajás en un banco. ¿En qué te puedo ayudar?"
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "small-talk",
+      "pregunta": "Hola! cómo andás?",
+      "tools": [],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 1.0,
+      "llamadas LLM": 1,
+      "tokens entrada": 1615,
+      "tokens salida": 29,
+      "error": "",
+      "respuesta": "¡Hola! Muy bien, gracias. ¿En qué puedo ayudarte hoy?"
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "general",
+      "pregunta": "¿Cuál es la capital de Francia?",
+      "tools": [],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 0.6,
+      "llamadas LLM": 1,
+      "tokens entrada": 1617,
+      "tokens salida": 51,
+      "error": "",
+      "respuesta": "París es la capital de Francia.  \n\n*Nota: esta información proviene de conocimientos generales y no está extraída de los documentos cargados.*"
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "papers ES",
+      "pregunta": "¿Cuántos parámetros tiene GPT-3?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 45.1,
+      "llamadas LLM": 2,
+      "tokens entrada": 4080,
+      "tokens salida": 133,
+      "error": "",
+      "respuesta": "GPT‑3 cuenta con **175 mil millones de parámetros** (el modelo “full” de 175 B)【1†Fuente: Language Models are Few-Shot Learners (GPT‑3), pág. 40】."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "papers EN",
+      "pregunta": "Which optimizer did the Transformer use, and with which beta values?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 10.0,
+      "llamadas LLM": 3,
+      "tokens entrada": 7798,
+      "tokens salida": 205,
+      "error": "",
+      "respuesta": "El Transformer se entrenó con el optimizador **Adam** (Kingma & Ba, 2015) utilizando los valores de los momentos:\n\n- **β₁ = 0.9**  \n- **β₂ = 0.98**  \n\n(Fuente: *Attention Is All You Need*, pág. 7)."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "sin evidencia",
+      "pregunta": "¿Qué dice el paper de Attention sobre el mundial de fútbol 2022?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 12.5,
+      "llamadas LLM": 2,
+      "tokens entrada": 3307,
+      "tokens salida": 96,
+      "error": "",
+      "respuesta": "No tengo información suficiente en los documentos: los fragmentos recuperados del paper **Attention** no mencionan el Mundial de fútbol 2022."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "estadística",
+      "pregunta": "¿Cuántos correos de phishing hay en el dataset?",
+      "tools": [
+        "estadisticas_dataset"
+      ],
+      "tools ok": true,
+      "dato ok": false,
+      "segundos": 26.0,
+      "llamadas LLM": 2,
+      "tokens entrada": 3441,
+      "tokens salida": 53,
+      "error": "",
+      "respuesta": "En el dataset hay **42 891 correos de phishing** (ver estadística del dataset)."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "dataset",
+      "pregunta": "Mostrame un ejemplo de correo de phishing bancario",
+      "tools": [
+        "buscar_en_dataset"
+      ],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 32.6,
+      "llamadas LLM": 2,
+      "tokens entrada": 4001,
+      "tokens salida": 404,
+      "error": "",
+      "respuesta": "Aquí tienes un ejemplo real de un correo de phishing que simula ser de un banco:\n\n**Fuente:** corpus Nazario – correo PHISHING  \n**Remitente:** Standard Bank <statement@standardbank.co.za>  \n**Asunto:** (omiso en el fragmento)  \n\n```\nyour email, then your password.                                           \nRegister for online banking                              \nYour password has been successfully changed.                                \nSign in Email address Please enter a valid email address                                        \nBy signing in you accept the terms and conditions\nLast updated on 5 July 2017\nSign in                                           \nRegister for online banking\n```\n\nEste mensaje intenta engañar al destinatario para que introduzca sus credenciales de acceso al banco en una página falsa que imita el portal de banca en línea. Observa los indicadores típicos de phishing:\n\n- **Remitente sospechoso:** aunque usa un dominio parecido al oficial (`standardbank.co.za`), el nombre de la cuenta (`statement@...`) no corresponde a la dirección de correo habitual del banco.  \n- **Urgencia y llamado a la acción:** “Your password has been successfully changed” y “Register for online banking” incitan al usuario a iniciar sesión de inmediato.  \n- **Enlaces o formularios falsos:** el mensaje suele contener un enlace que lleva a una página web fraudulenta donde se solicitan el correo y la contraseña.  \n\nAl recibir un correo con estas características, lo más seguro es no hacer clic en ningún enlace y verificar directamente en el sitio web oficial del banco o contactar al servicio de atención al cliente."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "contexto",
+      "pregunta": "¿Qué es multi-head attention?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 20.4,
+      "llamadas LLM": 2,
+      "tokens entrada": 3971,
+      "tokens salida": 403,
+      "error": "",
+      "respuesta": "Multi‑head attention es una extensión del mecanismo de atención que permite al modelo “prestar atención” a la vez a diferentes subespacios de representación. En lugar de aplicar una única función de atención sobre los vectores de consultas (Q), claves (K) y valores (V) de dimensión completa *d*ₘₒ𝚍ₑ𝚕, se proyectan linealmente Q, K y V **h** veces con matrices aprendidas distintas, obteniendo **h** conjuntos de consultas, claves y valores de dimensiones reducidas ( *d*ₖ, *d*ᵥ ). Cada conjunto se procesa con una cabeza de atención independiente y sus resultados se concatenan y se proyectan nuevamente para formar la salida final:\n\n\\[\n\\text{MultiHead}(Q,K,V)=\\text{Concat}(\\text{head}_1,\\dots,\\text{head}_h)W_O,\n\\qquad\n\\text{head}_i=\\text{Attention}(QW_{Q_i}, KW_{K_i}, VW_{V_i})\n\\]\n\n(Attention Is All You Need, pág. 5).\n\nCon esta arquitectura el modelo puede capturar relaciones distintas en diferentes posiciones y representaciones, algo que se pierde cuando se usa una sola cabeza que promedia toda la información. En la práctica se usan típicamente h = 8 cabezas, con *d*ₖ = *d*ᵥ = *d*ₘₒ𝚍ₑ𝚕 / h = 64, manteniendo un coste computacional comparable al de una única cabeza de atención completa (pág. 5)."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "seguimiento",
+      "pregunta": "¿Y cuántas cabezas usa el modelo big?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": false,
+      "segundos": 33.2,
+      "llamadas LLM": 2,
+      "tokens entrada": 5364,
+      "tokens salida": 188,
+      "error": "",
+      "respuesta": "En el paper **“Language Models are Few‑Shot Learners” (GPT‑3)**, el modelo de mayor tamaño (el llamado *GPT‑3 “big”* o **GPT‑3 175 B**) está configurado con **96 cabezas de atención** en cada capa (ver tabla 2.1, pág. 8)."
+    },
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "tipo": "memoria",
+      "pregunta": "Me llamo Ana y trabajo en un banco, recordalo",
+      "tools": [
+        "guardar_recuerdo"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 25.4,
+      "llamadas LLM": 2,
+      "tokens entrada": 3287,
+      "tokens salida": 61,
+      "error": "",
+      "respuesta": "¡Listo, Ana! He guardado que trabajas en un banco."
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "small-talk",
+      "pregunta": "Hola! cómo andás?",
+      "tools": [],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 1.0,
+      "llamadas LLM": 1,
+      "tokens entrada": 1615,
+      "tokens salida": 28,
+      "error": "",
+      "respuesta": "¡Hola! Estoy bien, gracias. ¿En qué puedo ayudarte hoy?"
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "general",
+      "pregunta": "¿Cuál es la capital de Francia?",
+      "tools": [],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 0.4,
+      "llamadas LLM": 1,
+      "tokens entrada": 1617,
+      "tokens salida": 48,
+      "error": "",
+      "respuesta": "La capital de Francia es París.  \n(Nota: esta información no proviene de los documentos cargados.)"
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "papers ES",
+      "pregunta": "¿Cuántos parámetros tiene GPT-3?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 45.1,
+      "llamadas LLM": 2,
+      "tokens entrada": 3885,
+      "tokens salida": 109,
+      "error": "",
+      "respuesta": "GPT‑3 cuenta con **175 mil millones de parámetros** (175 billion).  \n(Referencia: *Language Models are Few‑Shot Learners* – GPT‑3, pág. 24)."
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "papers EN",
+      "pregunta": "Which optimizer did the Transformer use, and with which beta values?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 1.8,
+      "llamadas LLM": 2,
+      "tokens entrada": 4215,
+      "tokens salida": 126,
+      "error": "",
+      "respuesta": "El Transformer utilizó el optimizador **Adam** con los siguientes parámetros de beta:  \n- β₁ = **0.9**  \n- β₂ = **0.98**  \n\n(Referencia: *Attention Is All You Need*, pág. 7‑8)."
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "sin evidencia",
+      "pregunta": "¿Qué dice el paper de Attention sobre el mundial de fútbol 2022?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 22.9,
+      "llamadas LLM": 2,
+      "tokens entrada": 3307,
+      "tokens salida": 73,
+      "error": "",
+      "respuesta": "No tengo información sobre el mundial de fútbol 2022 en el paper de Attention."
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "estadística",
+      "pregunta": "¿Cuántos correos de phishing hay en el dataset?",
+      "tools": [
+        "estadisticas_dataset"
+      ],
+      "tools ok": true,
+      "dato ok": false,
+      "segundos": 27.1,
+      "llamadas LLM": 2,
+      "tokens entrada": 3445,
+      "tokens salida": 97,
+      "error": "",
+      "respuesta": "Hay **42 891** correos de phishing en el dataset.  \n(Estadísticas del dataset: Total 82 486, Phishing 42 891, Legítimos 39 595.)"
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "dataset",
+      "pregunta": "Mostrame un ejemplo de correo de phishing bancario",
+      "tools": [
+        "buscar_en_dataset"
+      ],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 29.6,
+      "llamadas LLM": 2,
+      "tokens entrada": 3793,
+      "tokens salida": 166,
+      "error": "",
+      "respuesta": "**Ejemplo de correo de phishing bancario**  \n\n```\nAsunto: RE: HELP_DESK_SERVICE\n\nRemitente: Lawrence McDevitt <lmcdevitt@ohlone.edu>\n\nCuerpo:\nYour Password Has Expired\nCLICK HERE To Verify Your Password Has Expired CLICK HERE To Verify\n```\n\n*(Fuente: correo PHISHING | corpus Nazario | remitente Lawrence McDevitt <lmcdevitt@ohlone.edu> (relevancia 0.83))*"
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "contexto",
+      "pregunta": "¿Qué es multi-head attention?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": null,
+      "segundos": 30.1,
+      "llamadas LLM": 2,
+      "tokens entrada": 3789,
+      "tokens salida": 344,
+      "error": "",
+      "respuesta": "**Multi‑head attention** es una variante de la atención que permite que el modelo preste atención a diferentes partes de la secuencia simultáneamente, cada una en un sub‑espacio de representación distinto.\n\nSegún el paper *Attention Is All You Need*:\n\n- Se proyectan las consultas (Q), claves (K) y valores (V) en **h** sub‑espacios paralelos mediante matrices de pesos \\(W_{Q_i}, W_{K_i}, W_{V_i}\\) \\((i = 1 \\dots h)\\).  \n- En cada cabeza se calcula la atención de tipo *Scaled Dot‑Product* sobre esas proyecciones.  \n- Los resultados de todas las cabezas se concatenan y se proyectan de nuevo con una matriz \\(W_O\\) para obtener la salida final.  \n\n> “Multi‑head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.” (Attention Is All You Need, pág. 5)\n\nEn la práctica, el paper emplea \\(h = 8\\) cabezas con \\(d_k = d_v = d_{\\text{model}}/h = 64\\). Esta arquitectura mantiene un coste computacional similar al de una sola cabeza de atención de dimensionalidad completa, pero mejora la capacidad del modelo para capturar relaciones complejas en la secuencia."
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "seguimiento",
+      "pregunta": "¿Y cuántas cabezas usa el modelo big?",
+      "tools": [
+        "buscar_en_papers"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 102.7,
+      "llamadas LLM": 4,
+      "tokens entrada": 13057,
+      "tokens salida": 311,
+      "error": "",
+      "respuesta": "El modelo **Transformer (big)** utiliza **16 cabezas de atención** (multi‑head attention).  \nEsta configuración se indica en la línea inferior de la Tabla 3 del paper *Attention Is All You Need* (pág. 9): “big 6 1024 4096 16 0.3 300K”, donde el número **16** corresponde al parámetro *num_heads* del modelo."
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "tipo": "memoria",
+      "pregunta": "Me llamo Ana y trabajo en un banco, recordalo",
+      "tools": [
+        "guardar_recuerdo"
+      ],
+      "tools ok": true,
+      "dato ok": true,
+      "segundos": 25.6,
+      "llamadas LLM": 2,
+      "tokens entrada": 3287,
+      "tokens salida": 66,
+      "error": "",
+      "respuesta": "¡Hola Ana! He guardado tu información."
+    }
+  ]
+}

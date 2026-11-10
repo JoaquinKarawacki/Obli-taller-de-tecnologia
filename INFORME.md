@@ -25,7 +25,7 @@ Un agente orquestado con LangGraph decide en cada mensaje si responde directamen
 
 El código está en módulos `.py` dentro de `src/`. El notebook `obligatorio_agentic_rag.ipynb` los importa y muestra el sistema funcionando de punta a punta. El mismo agente se puede usar por consola (`main.py`) o por HTTP, con una API hecha con FastAPI.
 
-De los opcionales de la letra desarrollamos tres: la comparación de estrategias de chunking y de recuperación, la comparación de modelos de embeddings y la API. Están en la sección 12 del notebook y se resumen en la sección 7 de este informe.
+Desarrollamos los cuatro opcionales de la letra: la comparación de estrategias de chunking y de recuperación, la comparación de modelos de embeddings, la API y la comparación de LLMs. Están en la sección 12 del notebook y se resumen en la sección 7 de este informe.
 
 ## 2. Arquitectura
 
@@ -82,7 +82,7 @@ Usuario -> chatbot (consola o notebook) o API REST (FastAPI)
 
 **Base vectorial.** ChromaDB funciona en local, sin cuenta ni clave, y persiste en una carpeta. Así cualquier persona puede ejecutar el sistema sin nuestras credenciales y sin depender de la red. Usamos colecciones separadas para correos y documentos, con metadatos para citar y filtrar: título y página en los documentos; corpus, remitente y etiqueta en los correos.
 
-**LLM.** Groq ofrece un plan gratuito y respuestas rápidas. Primero elegimos `llama-3.3-70b-versatile`, pero Groq lo retiró. Comparamos `qwen/qwen3.8-27b` con `openai/gpt-oss-120b` usando nuestras tools: Qwen eligió bien las herramientas y no inventó argumentos, así que lo adoptamos. Usamos `temperature=0` y sin razonamiento visible, para ahorrar tokens.
+**LLM.** Groq ofrece un plan gratuito y respuestas rápidas. Primero elegimos `llama-3.3-70b-versatile`, pero Groq lo retiró. Comparamos `qwen/qwen3.8-27b` con `openai/gpt-oss-120b` usando nuestras tools: Qwen eligió bien las herramientas y no inventó argumentos, así que lo adoptamos. Después lo confirmamos con una comparación formal de los tres modelos disponibles (sección 7 y sección 12.7 del notebook). Usamos `temperature=0` y sin razonamiento visible, para ahorrar tokens.
 
 **Agente.** La letra prohíbe `create_react_agent()` y otras abstracciones que oculten la lógica. Construimos el grafo a mano y tampoco usamos `ToolNode` ni `tools_condition`, que vienen del mismo módulo `langgraph.prebuilt`. No hay un nodo router aparte: el LLM, guiado por el prompt, decide el tipo de consulta. Un router con otra llamada al LLM duplicaría el consumo de tokens sin agregar capacidades.
 
@@ -263,7 +263,7 @@ Verificamos contra los documentos los datos de las respuestas:
 
 - Escribir en inglés la consulta de `buscar_en_papers`: en los experimentos de la sección 12, las mismas preguntas recuperan la página correcta en 70% de los casos en inglés y en 45% en español.
 - Completar siempre `titulo_paper` cuando la pregunta nombra un paper: buscar dentro del paper correcto fue lo que más mejoró la recuperación.
-- Pasar a `multilingual-e5-base` y recalibrar el umbral, si se puede pagar una reindexación unas tres veces más lenta.
+- Pasar a `multilingual-e5-base` y recalibrar el umbral, si se puede pagar una reindexación entre dos y tres veces y media más lenta.
 - Verificar cada respuesta contra los fragmentos con un nodo de validación, cuando la cuota lo permita.
 - Reformular automáticamente la búsqueda cuando los fragmentos no responden la pregunta.
 - Re-ranking de los fragmentos recuperados y búsqueda híbrida (semántica y por palabras clave).
@@ -273,16 +273,16 @@ Verificamos contra los documentos los datos de las respuestas:
 
 **Opcionales de la letra (sección 12 del notebook):**
 
-Se desarrollaron tres opcionales. Los dos que corresponden a temas vistos en clase son las estrategias de chunking y de recuperación y la comparación de modelos de embeddings; se evaluaron sin el LLM, con 20 preguntas sobre los cinco papers en español y en inglés, midiendo si se recupera la página que contiene la respuesta (acierto@4 y MRR).
+Se desarrollaron los cuatro opcionales. Los dos que corresponden a temas vistos en clase son las estrategias de chunking y de recuperación y la comparación de modelos de embeddings; se evaluaron sin el LLM, con 20 preguntas sobre los cinco papers en español y en inglés, midiendo si se recupera la página que contiene la respuesta (acierto@4 y MRR).
 
 - **Chunking:** se compararon el corte recursivo con cuatro tamaños, sin solapamiento, por oraciones y semántico. Ninguna estrategia mejoró de forma clara (diferencias de una a tres preguntas), así que se mantiene 800/100.
 - **Recuperación:** buscar dentro del paper correcto es lo que más mejora (de 45% a 60% en español y de 70% a 85% en inglés), lo que respalda el filtro `titulo_paper`. MMR no fue una mejora estable y top-8 duplica los tokens. El umbral 0,68 no perdió preguntas pertinentes.
-- **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa unas tres veces más lento; se mantiene e5-small por costo.
+- **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa entre dos y tres veces y media más lento; se mantiene e5-small por costo.
 - **Hallazgo principal:** las preguntas en español recuperan peor que las mismas en inglés. Escribir la consulta de la tool en inglés es una mejora barata que queda propuesta, porque hay que validarla con el LLM.
 
 - **API con FastAPI** (`src/api.py`): expone el mismo agente por HTTP, sin duplicar lógica. Permite conversar (`POST /chat`, que crea o continúa una conversación por `thread_id`), listar conversaciones, leer el historial desde el checkpointer y consultar los recuerdos del usuario. El agente se construye una vez al arrancar; los endpoints corren en un pool de hilos para atender usuarios en paralelo; un usuario no puede leer ni continuar conversaciones de otro (404); y los errores se traducen a códigos HTTP (422 entrada inválida, 429 cuota de Groq agotada, 502 otros errores del LLM). FastAPI genera la documentación interactiva en `/docs`. Se levanta con `uvicorn src.api:app`.
 
-[PENDIENTE: comparación de LLMs, si se llega a hacer.]
+- **Comparación de LLMs** (`src/comparacion_llms.py`): el mismo agente, cambiando solo el LLM, sobre 10 casos de la batería, con `qwen/qwen3.8-27b`, `openai/gpt-oss-120b` y `openai/gpt-oss-20b`. Los tres eligieron bien las tools en los 10 casos, así que las diferencias están en la respuesta. En la revisión manual, Qwen no tuvo observaciones (10 de 10). gpt-oss-120b, el más rápido (20,7 s de media contra 30,7), perdió el contexto en el seguimiento: interpretó "modelo big" como GPT-3 y respondió con un dato real de otro paper. Los dos gpt-oss respondieron en español a una pregunta en inglés, y gpt-oss-20b presentó como bancario un correo que no lo era. El costo fue parecido, unos 40.000 tokens de entrada por batería. Se mantiene Qwen. Los resultados quedan guardados en `resultados/comparacion_llms.json`, para que el notebook los muestre sin gastar cuota.
 
 ## 8. Uso de inteligencia artificial generativa
 

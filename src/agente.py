@@ -137,18 +137,21 @@ def recortar_historial(mensajes: list) -> list:
     return anteriores[-config.VENTANA_HISTORIAL:] + mensajes[inicio_turno:]
 
 
-def crear_llm() -> ChatGroq:
+def crear_llm(modelo: str = config.MODELO_LLM) -> ChatGroq:
     """LLM de Groq. ``temperature=0`` para respuestas más estables y fieles al contexto.
 
     El plan gratuito de Groq limita los tokens de salida por minuto (1000 para este
     modelo). Por eso se apaga el "razonamiento" de qwen3 (gasta tokens de salida
     antes de cada respuesta) y, si igual se llega al límite, se reintenta esperando.
+
+    ``modelo`` permite usar otro LLM de Groq (sección 12.7 del notebook). Los modelos
+    gpt-oss no permiten apagar el razonamiento, así que se usa el nivel más bajo.
     """
     return ChatGroq(
         api_key=config.GROQ_API_KEY,
-        model=config.MODELO_LLM,
+        model=modelo,
         temperature=0,
-        reasoning_effort="none",
+        reasoning_effort="none" if modelo.startswith("qwen/") else "low",
         max_tokens=config.MAX_TOKENS_RESPUESTA,
         max_retries=6,
     )
@@ -182,16 +185,17 @@ def invocar_llm(llm, mensajes: list) -> AIMessage:
     return respuesta
 
 
-def construir_agente(checkpointer, store):
+def construir_agente(checkpointer, store, modelo: str = config.MODELO_LLM):
     """Arma y compila el grafo de LangGraph del agente.
 
     Args:
         checkpointer: memoria a corto plazo (historial por ``thread_id``).
         store: memoria a largo plazo (recuerdos por ``user_id``).
+        modelo: LLM de Groq que usa el agente (por defecto, el del proyecto).
     """
     herramientas = HERRAMIENTAS + [guardar_recuerdo]
     herramientas_por_nombre = {herramienta.name: herramienta for herramienta in herramientas}
-    llm_con_tools = crear_llm().bind_tools(herramientas)
+    llm_con_tools = crear_llm(modelo).bind_tools(herramientas)
 
     def nodo_agente(estado: MessagesState, config: RunnableConfig, *, store: BaseStore):
         """El LLM decide: responder directo o pedir herramientas.
