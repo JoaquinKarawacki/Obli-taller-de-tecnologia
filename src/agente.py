@@ -26,6 +26,7 @@ de alto nivel que oculten la lógica del agente (ver PLAN.md). Por eso también 
 nodo de tools y la condición de salida están escritos a mano (en vez de
 ``ToolNode`` / ``tools_condition``).
 """
+import re
 import time
 
 from groq import BadRequestError, RateLimitError
@@ -63,7 +64,8 @@ Reglas contra las alucinaciones:
 - Citá la fuente de cada dato (título del paper y página, o corpus del correo).
 
 Memoria a largo plazo:
-- Si el usuario cuenta un dato duradero sobre sí mismo (nombre, trabajo, intereses, preferencias, nivel de conocimiento), guardalo con guardar_recuerdo: un dato por llamada y sin repetir lo que ya está en sus recuerdos.
+- Si el usuario cuenta un dato duradero sobre sí mismo (nombre, trabajo, profesión, intereses, preferencias, nivel de conocimiento), guardalo con guardar_recuerdo ANTES de responder, aunque no te pida que lo recuerdes: un dato por llamada y sin repetir lo que ya está en sus recuerdos.
+- Un dato solo queda guardado si llamás a guardar_recuerdo. Nunca digas que guardaste, anotaste o vas a recordar algo si no llamaste a la herramienta en este turno.
 - NO guardes preguntas puntuales, datos de los documentos ni datos sensibles (contraseñas, tarjetas, documentos de identidad).
 - Usá los recuerdos para personalizar la respuesta (ej. llamarlo por su nombre o adaptar el nivel técnico).
 
@@ -81,8 +83,42 @@ Usuario: ¿Cuánto costó entrenar el modelo del paper X?
 Fragmento recuperado: "[1] Fuente: X, pág. 7. We used the Adam optimizer."
 Respuesta: No tengo información suficiente en los documentos: los fragmentos recuperados no mencionan el costo de entrenamiento.
 
+Usuario: Soy Juan, trabajo como analista de datos, recordalo.
+Acción: llamar a guardar_recuerdo con recuerdo="Se llama Juan y trabaja como analista de datos".
+Respuesta: después de que la herramienta confirma, contestá con una frase breve en el idioma del usuario.
+
 Respondé de forma clara y concisa, siempre en el mismo idioma en que escribe el usuario (español o inglés), aunque los documentos estén en inglés.
 Aunque el usuario pida mucho detalle, nunca superes las 400 palabras: priorizá lo más importante y terminá la respuesta completa."""
+
+
+# Frases con las que el LLM afirma haber guardado un dato del usuario.
+AFIRMA_GUARDADO = re.compile(
+    r"\b(guard[eé]|guardad[oa]|lo guardo|anot[eé]|anotad[oa]|lo voy a recordar|lo recordar[eé]|tomo nota|tom[eé] nota"
+    r"|i(?:'ve| have)? saved|i'll remember|i will remember|noted)\b",
+    re.IGNORECASE,
+)
+
+CORRECCION_RECUERDO = (
+    "[Control del sistema] Tu respuesta dice que guardaste un dato del usuario, pero en este turno no "
+    "llamaste a guardar_recuerdo, así que no quedó guardado. Si corresponde guardarlo, llamá ahora a "
+    "guardar_recuerdo. Si no corresponde, respondé de nuevo sin decir que lo guardaste."
+)
+
+
+def afirma_recuerdo_sin_guardar(mensajes_turno: list, respuesta: AIMessage) -> bool:
+    """Detecta la respuesta que dice haber guardado un recuerdo sin haber llamado a la tool.
+
+    Se observó en las pruebas: ante "Me llamo Ana y trabajo en un banco, recordalo" el
+    LLM respondía "lo guardé" sin llamar a ``guardar_recuerdo``, y el dato se perdía.
+    """
+    if respuesta.tool_calls or not isinstance(respuesta.content, str):
+        return False
+    guardo = any(
+        llamada["name"] == "guardar_recuerdo"
+        for mensaje in mensajes_turno
+        for llamada in getattr(mensaje, "tool_calls", [])
+    )
+    return not guardo and bool(AFIRMA_GUARDADO.search(respuesta.content))
 
 
 def recortar_historial(mensajes: list) -> list:
@@ -166,7 +202,15 @@ def construir_agente(checkpointer, store):
         lista = "\n".join(f"- {recuerdo}" for recuerdo in recuerdos) or "(todavía no hay recuerdos)"
         prompt = f"{PROMPT_SISTEMA}\n\nRecuerdos guardados de este usuario:\n{lista}"
         mensajes = [SystemMessage(prompt)] + recortar_historial(estado["messages"])
-        return {"messages": [invocar_llm(llm_con_tools, mensajes)]}
+        respuesta = invocar_llm(llm_con_tools, mensajes)
+
+        # Control: si dice que guardó un recuerdo sin haber llamado a la tool, se le
+        # avisa y se pide la respuesta de nuevo (una sola vez). El aviso no se guarda
+        # en el historial: solo se usa en esta llamada.
+        inicio_turno = max(i for i, m in enumerate(estado["messages"]) if isinstance(m, HumanMessage))
+        if afirma_recuerdo_sin_guardar(estado["messages"][inicio_turno:], respuesta):
+            respuesta = invocar_llm(llm_con_tools, mensajes + [respuesta, HumanMessage(CORRECCION_RECUERDO)])
+        return {"messages": [respuesta]}
 
     def nodo_herramientas(estado: MessagesState, config: RunnableConfig, *, store: BaseStore):
         """Ejecuta cada tool que pidió el LLM y devuelve un ToolMessage por cada una."""

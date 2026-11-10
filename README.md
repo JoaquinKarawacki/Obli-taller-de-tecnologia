@@ -19,7 +19,8 @@ Hecho:
 
 Falta terminar:
 
-- [ ] **Informe:** completar los `[PENDIENTE]` (integrantes, opcionales y revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF.
+- [ ] **Notebook:** volver a ejecutarlo completo antes de entregar. Se ejecutó el 9/11, antes del cambio de prompt y del control de recuerdos del 10/11.
+- [ ] **Informe:** completar los `[PENDIENTE]` (comparación de LLMs y revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF.
 - [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
 - [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
 - [ ] **ZIP de entrega:** el CSV (145 MB) y `chroma_db/` (221 MB) superan los 40 MB. Hay que definir con los docentes cómo se evalúa.
