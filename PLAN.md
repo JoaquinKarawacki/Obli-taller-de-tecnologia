@@ -80,7 +80,7 @@ Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
 | Memoria largo plazo | **Store de LangGraph** (`SqliteStore`) | Compartida entre conversaciones, por `user_id` |
 | Sesiones paralelas | `thread_id` (conversación) + `user_id` (usuario) | |
 | Entregable | **Módulos `.py`** + **notebook con outputs** (`obligatorio_agentic_rag.ipynb`) | La letra pide el notebook como entregable; importa los módulos |
-| Interfaz (demo) | **Gradio** | UI de chat para la defensa (opcional que suma) |
+| Interfaz | Chat por consola (`main.py`) + **API REST con FastAPI** (opcional) | Gradio se descartó el 2026-11-09 (ver `BITACORA.md`) |
 | Otros opcionales | Comparar embeddings/LLMs/chunking | Suman, no restan |
 
 > **Stack 100% gratuito:** Groq (LLM, free tier) + embeddings locales (`sentence-transformers`) + Chroma local. No requiere tarjeta ni servicios pagos.
@@ -228,5 +228,5 @@ develop ─────●────●────●──────●─
 ## 9. Definiciones y pendientes
 - [x] **Dataset / temática:** `naserabdullahalam/phishing-email-dataset` — Phishing Email Dataset (ciberseguridad, **inglés**).
 - [x] **Enfoque multilingüe:** datos en inglés, chatbot en **ES + EN** (LLM y embeddings multilingües → retrieval cross-lingual).
-- [ ] Integrantes del grupo y números de estudiante.
+- [x] Integrantes del grupo y números de estudiante (en `INFORME.md`).
 - [x] Papers: los 6 de la materia (Attention, GPT, GPT-3, Scaling Laws, Subliminal Learning, Designing Data-Intensive Applications).

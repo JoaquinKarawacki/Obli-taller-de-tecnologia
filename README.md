@@ -6,25 +6,26 @@ vectorial, agentes con *tool calling* y memoria a corto y largo plazo.
 
 > 📄 Plan completo y fases: [`PLAN.md`](./PLAN.md) · Decisiones y avances: [`BITACORA.md`](./BITACORA.md)
 
-## Estado actual (9/11/2026): trabajo en curso
+## Estado actual (12/11/2026): trabajo en curso
 
 **Todavía no está listo para entregar.** Entrega: 16/11/2026 a las 21:00.
 
 Hecho:
 
-- [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs. 12 de 12 decisiones de tools correctas.
-- [x] **Informe:** borrador completo en `INFORME.md`.
+- [x] **Código:** todo integrado en `develop`, incluidos los opcionales.
+- [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs el 9/11. 12 de 12 decisiones de tools correctas.
+- [x] **Informe:** completo en `INFORME.md`, salvo la revisión del uso de IA.
 - [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
 - [x] **Opcionales:** los cuatro de la letra, en la sección 12 del notebook: experimentos de chunking, recuperación y embeddings, una API con FastAPI (`src/api.py`) y la comparación de LLMs (`src/comparacion_llms.py`).
 
 Falta terminar:
 
-- [ ] **Notebook:** volver a ejecutarlo completo antes de entregar. Se ejecutó el 9/11, antes del cambio de prompt y del control de recuerdos del 10/11.
-- [ ] **Informe:** completar los `[PENDIENTE]` (revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF.
+- [ ] **Notebook:** volver a ejecutarlo completo antes de entregar. Sus outputs son del 9/11 y muestran el prompt anterior al cambio del 10/11 (regla y control de `guardar_recuerdo`). Después, actualizar la sección 6 del informe con los nuevos resultados.
+- [ ] **Informe:** completar el `[PENDIENTE]` de la sección 8 (revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF. La letra pide que los documentos de texto vayan en PDF dentro del ZIP.
 - [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
 - [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
-- [ ] **ZIP de entrega:** el CSV (145 MB) y `chroma_db/` (221 MB) superan los 40 MB. Hay que definir con los docentes cómo se evalúa.
-- [ ] **Integración:** estos cambios están en `feature/calidad-respuestas`; falta mergearlos a `develop` y después a `main`.
+- [ ] **ZIP de entrega:** máximo 40 MB. `data/` (431 MB) y `chroma_db/` (221 MB) no entran: el ZIP lleva el código, el notebook con outputs, el informe en PDF y el link al repositorio. Confirmar con los docentes.
+- [ ] **Integración:** mergear `develop` a `main` cuando esté todo cerrado. Hoy `main` solo tiene la letra.
 - [ ] **Defensa y presentación oral:** preparar entre el 16 y el 27 de noviembre.
 
 A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 y hasta 2 en la página 4.
@@ -33,7 +34,7 @@ A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 
 
 ## Stack (100% gratuito)
 
-- **Python 3.11+**
+- **Python 3.11+** (las versiones de `requirements.txt` se probaron con 3.14.3)
 - **LangGraph** — orquestación del agente (grafo armado a mano)
 - **Groq** (`qwen/qwen3.8-27b`) — LLM, gratis
 - **sentence-transformers** (`multilingual-e5-small`) — embeddings locales, en español
@@ -102,6 +103,7 @@ La documentación interactiva queda en http://127.0.0.1:8000/docs. Endpoints: `G
 ## Estructura
 
 ```
+├── INFORME.md           # informe de entrega (documentación de la letra)
 ├── PLAN.md              # plan, fases y stack
 ├── BITACORA.md          # decisiones de diseño y avances
 ├── requirements.txt
@@ -124,7 +126,9 @@ La documentación interactiva queda en http://127.0.0.1:8000/docs. Endpoints: `G
 │   ├── consolidar_dataset.py
 │   ├── construir_indice.py
 │   ├── construir_indice_papers.py
-│   └── probar_recuperacion.py
+│   ├── probar_recuperacion.py
+│   ├── probar_agente.py     # batería de consultas (usa Groq)
+│   └── probar_memoria.py    # memoria y sesiones (usa Groq)
 ├── data/                # dataset + papers (no se commitea)
 └── chroma_db/           # base vectorial persistida (no se commitea)
 ```

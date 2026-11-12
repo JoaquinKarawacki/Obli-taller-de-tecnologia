@@ -43,6 +43,7 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Resultado:** 82.486 filas (42.891 phishing / 39.595 legítimos). Archivo de ~145 MB, regenerable con `python -m scripts.consolidar_dataset` (no se commitea).
 
 ### 2026-09-24 — Interfaz: Gradio
+*(Reemplazada: ver 2026-11-09 "Opcional: API con FastAPI" y 2026-11-12.)*
 - **Decisión:** UI de chat con Gradio para la demo/defensa.
 - **Motivo:** opcional que suma; se arma en pocas líneas y es visual.
 - **Alternativa descartada:** FastAPI (más trabajo, sin UI directa).
@@ -185,6 +186,11 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Verificación:** el patrón de "42.891" no aceptaba el espacio fino que usa gpt-oss ("42 891"), y daba falsos negativos; se corrigió.
 - **Resultados:** tools correctas 10 de 10 en los tres. En la revisión manual: Qwen 10 de 10 sin observaciones; gpt-oss-120b 7 de 10 (perdió el contexto del seguimiento y respondió sobre GPT-3, contestó en español a la pregunta en inglés, dejó marcas de cita "【1†…】"); gpt-oss-20b 8 de 10 (idioma, y presentó como bancario un correo que no lo era). gpt-oss-120b fue el más rápido (20,7 s de media contra 30,7).
 - **Decisión:** se mantiene Qwen. Los resultados quedan en `resultados/comparacion_llms.json` y la sección 12.7 del notebook los lee.
+
+### 2026-11-12 — Revisión contra la letra antes de entregar
+- **Estado:** todas las ramas están mergeadas en `develop`; `main` todavía solo tiene la letra.
+- **Gradio:** se quita de `requirements.txt` porque ningún módulo lo usa. La interfaz queda como chat por consola y API con FastAPI, que está fijada por separado. Reemplaza la decisión del 2026-09-24.
+- **Pendiente para entregar:** volver a ejecutar el notebook, porque sus outputs son del 9/11 y muestran el prompt anterior al del 10/11; completar la revisión del uso de IA en el informe y pasarlo a PDF; probar una instalación limpia; armar el ZIP de 40 MB sin `data/` ni `chroma_db/`, y mergear `develop` a `main`.
 
 ---
 
