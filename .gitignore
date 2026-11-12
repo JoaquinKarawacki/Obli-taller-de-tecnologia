@@ -17,6 +17,9 @@ chroma_db/
 *.sqlite3-shm
 *.sqlite3-wal
 
+# Generados
+INFORME.pdf
+
 # SO / editores
 .DS_Store
 Thumbs.db

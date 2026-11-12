@@ -192,6 +192,12 @@ Formato: **fecha — decisión — motivo — alternativas descartadas**.
 - **Gradio:** se quita de `requirements.txt` porque ningún módulo lo usa. La interfaz queda como chat por consola y API con FastAPI, que está fijada por separado. Reemplaza la decisión del 2026-09-24.
 - **Pendiente para entregar:** volver a ejecutar el notebook, porque sus outputs son del 9/11 y muestran el prompt anterior al del 10/11; completar la revisión del uso de IA en el informe y pasarlo a PDF; probar una instalación limpia; armar el ZIP de 40 MB sin `data/` ni `chroma_db/`, y mergear `develop` a `main`.
 
+### 2026-11-12 — Notebook ejecutado con la versión final
+- **Ejecución:** `jupyter nbconvert --execute`, de punta a punta y sin errores, en 25 minutos. Ya muestra el prompt final.
+- **Resultados:** 12 de 12 decisiones de tools correctas, con 36 s de media. Las métricas de los experimentos de chunking, recuperación y embeddings dieron idénticas a las del 9/11; solo cambiaron los tiempos. e5-base indexó 3,7 veces más lento que e5-small, contra 2,3 la vez anterior.
+- **Cambios observados:** "¿Qué es el few-shot learning?" ahora busca en los papers. Ana y Sofía guardaron su recuerdo al presentarse. Siguen sin resolverse el ejemplo de phishing bancario, que no se reformula solo, y algunos agregados interpretativos menores.
+- **Informe:** se actualizaron las secciones 6 y 7 y se agregó `scripts/informe_a_pdf.py` (Markdown con `mistune`, que viene con Jupyter, y PDF con Chrome o Edge headless). `INFORME.pdf` no se commitea porque se regenera.
+
 ---
 
 ## Temática / dataset — DECIDIDO

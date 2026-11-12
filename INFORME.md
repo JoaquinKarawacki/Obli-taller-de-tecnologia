@@ -197,7 +197,7 @@ Aplicamos varias capas:
 
 ## 6. Pruebas y resultados
 
-Los resultados de esta sección son los del notebook ejecutado el 9/11/2026 con el LLM real (sección 8 y siguientes).
+Los resultados de esta sección son los del notebook ejecutado el 12/11/2026 con el LLM real (sección 8 y siguientes), con la versión final del prompt y del código.
 
 ### 6.1 Decisión del tipo de consulta
 
@@ -206,35 +206,37 @@ Probamos 12 consultas de distinto tipo. Para cada una declaramos de antemano qu�
 | Tipo | Consulta | Tools usadas | Correcto | Tiempo |
 |---|---|---|---|---|
 | Small-talk | Hola! cómo andás? | ninguna | Sí | 1 s |
-| General | ¿Cuál es la capital de Francia? | ninguna | Sí | 0 s |
-| Documentos (ES) | ¿Cuántos parámetros tiene GPT-3? | `buscar_en_papers` | Sí | 17 s |
-| Documentos (EN) | What does the Scaling Laws paper say about model size and loss? | `buscar_en_papers` | Sí | 47 s |
-| Resumen | Resumir "Attention Is All You Need" en tres párrafos | `buscar_en_papers` | Sí | 51 s |
-| Sin evidencia | ¿Qué dice el paper de Attention sobre el mundial 2022? | `buscar_en_papers` | Sí | 33 s |
-| Estadística | ¿Cuántos correos de phishing hay en el dataset? | `estadisticas_dataset` | Sí | 36 s |
-| Ranking | ¿Qué dominios usan más los correos de phishing? | `ranking_dataset` | Sí | 35 s |
-| Dataset | Mostrame un ejemplo de correo de phishing bancario | `buscar_en_dataset` | Sí | 41 s |
-| Análisis | 'Your account is suspended, click here'. ¿Es phishing? | `buscar_en_dataset` | Sí | 38 s |
+| General | ¿Cuál es la capital de Francia? | ninguna | Sí | 1 s |
+| Documentos (ES) | ¿Cuántos parámetros tiene GPT-3? | `buscar_en_papers` | Sí | 21 s |
+| Documentos (EN) | What does the Scaling Laws paper say about model size and loss? | `buscar_en_papers` | Sí | 51 s |
+| Resumen | Resumir "Attention Is All You Need" en tres párrafos | `buscar_en_papers` | Sí | 69 s |
+| Sin evidencia | ¿Qué dice el paper de Attention sobre el mundial 2022? | `buscar_en_papers` | Sí | 35 s |
+| Estadística | ¿Cuántos correos de phishing hay en el dataset? | `estadisticas_dataset` | Sí | 38 s |
+| Ranking | ¿Qué dominios usan más los correos de phishing? | `ranking_dataset` | Sí | 37 s |
+| Dataset | Mostrame un ejemplo de correo de phishing bancario | `buscar_en_dataset` | Sí | 42 s |
+| Análisis | 'Your account is suspended, click here'. ¿Es phishing? | `buscar_en_dataset` | Sí | 41 s |
 | Contexto | ¿Qué es multi-head attention? | `buscar_en_papers` | Sí | 43 s |
-| Seguimiento | ¿Y cuántas cabezas usa el modelo big? | `buscar_en_papers` | Sí | 50 s |
+| Seguimiento | ¿Y cuántas cabezas usa el modelo big? | `buscar_en_papers` | Sí | 49 s |
 
-**Resultado: 12 de 12 decisiones correctas, con 33 segundos promedio por consulta.** Casi todo ese tiempo es espera por el límite de tokens por minuto de Groq.
+**Resultado: 12 de 12 decisiones correctas, con 36 segundos promedio por consulta.** Casi todo ese tiempo es espera por el límite de tokens por minuto de Groq. Es el mismo resultado que en la ejecución anterior, del 9/11, hecha antes de los cambios de prompt del 10/11: esos cambios no empeoraron la elección de herramientas.
 
 ### 6.2 Calidad de las respuestas
 
 Verificamos contra los documentos los datos de las respuestas:
 
-- **Cifras correctas:** GPT-3 tiene 175B de parámetros; el Transformer obtiene 28.4 BLEU en inglés-alemán y 41.8 en inglés-francés; el modelo big usa 16 cabezas con `d_model = 1024`.
+- **Cifras correctas:** GPT-3 tiene 175B de parámetros; el Transformer obtiene 28.4 BLEU en inglés-alemán y 41.8 en inglés-francés; el modelo base usa 8 cabezas con `d_k = d_v = 64`, y el modelo big, 16 cabezas con `d_model = 1024`.
 - **Seguimiento:** "¿Y cuántas cabezas usa el modelo big?" se resolvió buscando de nuevo y citando la Tabla 3. En una prueba anterior a la corrección del prompt, la misma pregunta se respondió sin buscar y con datos falsos.
+- **Seguimiento sin buscar, cuando corresponde:** por la API, "¿Y qué valores de beta usaron?" se respondió sin tools, porque los valores ya estaban escritos en la respuesta anterior. Es lo que permite el prompt: reutilizar lo que aparece en respuestas previas y buscar todo dato nuevo.
 - **Sin evidencia:** ante la consulta sobre el mundial, el agente buscó y admitió que el paper no trata ese tema.
-- **Con y sin contexto:** sin contexto, el LLM inventó una explicación del *subliminal learning*. Con los fragmentos respondió lo que dice el paper: el maestro y el estudiante deben compartir una inicialización similar.
+- **Con y sin contexto:** sin contexto, el LLM inventó una explicación del *subliminal learning* como si fuera destilación de conocimiento. Con los fragmentos respondió lo que dice el paper: el maestro y el estudiante deben compartir una inicialización similar.
 - **Estadísticas:** los conteos coinciden con el CSV. El ranking informa sobre cuántos correos se calculó: 27.139 de 42.891.
 
 ### 6.3 Memoria y sesiones
 
 | Prueba | Resultado |
 |---|---|
-| Ana se presenta | El agente guardó el recuerdo "Se llama Ana y trabaja en seguridad informática en un banco" |
+| Ana se presenta, sin pedir que se recuerde | El agente guardó el recuerdo "Se llama Ana y trabaja en seguridad informática en un banco" |
+| Ana pregunta qué es el *few-shot learning* | Buscó en los documentos y citó el paper de GPT-3 (pág. 6); no guardó la pregunta como recuerdo |
 | Conversación nueva de Ana | Recordó su nombre y trabajo (largo plazo), pero no lo que preguntó en la otra conversación |
 | Reinicio y retomar la conversación 1 | Con un agente nuevo, recordó que la última pregunta fue sobre few-shot learning |
 | Ana y Beto en paralelo | Cada uno recibió solo su información; Beto no tiene recuerdos |
@@ -242,10 +244,10 @@ Verificamos contra los documentos los datos de las respuestas:
 
 ### 6.4 Problemas observados
 
-- **Pregunta sin búsqueda:** "¿Qué es el few-shot learning?" se respondió con conocimiento general y la nota aclaratoria, aunque el tema está en el paper de GPT-3. Lo esperable era buscar.
-- **Búsqueda sin reintento:** al pedir un ejemplo de phishing bancario, el agente dijo que no encontró uno específico y ofreció buscar de nuevo, en lugar de reformular la búsqueda por su cuenta. En otra prueba, con otra consulta, encontró un correo que suplanta a Bank of America.
-- **Interpretaciones de más:** en el ranking de dominios, el agente sugirió por qué aparecen `wikipedia.org` y `merriam-webster.com`. Lo presentó como probable, pero no surge de los datos.
-- **Recuerdo no guardado (corregido):** en pruebas posteriores, ante "Me llamo Ana y trabajo en un banco, recordalo", el agente respondía "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`, y el dato no quedaba guardado. Pasaba siempre con ese mensaje, por `temperature=0`. Tampoco guardaba "Soy desarrollador y me interesa la seguridad informática". Se corrigió en dos capas: el prompt ahora exige guardar antes de responder y prohíbe afirmar un guardado sin la tool, con un ejemplo few-shot; y un control en el nodo `agente` detecta la afirmación sin llamada y pide la respuesta de nuevo. Después de la corrección, los cinco mensajes de prueba guardaron su recuerdo y el pedido de guardar una contraseña se rechazó. En una de las pruebas fue el control el que resolvió el caso.
+- **Pregunta sin búsqueda (no se repitió):** en la ejecución del 9/11, "¿Qué es el few-shot learning?" se respondió con conocimiento general y la nota aclaratoria, aunque el tema está en el paper de GPT-3. En la del 12/11, con el prompt final, el agente buscó y citó el paper.
+- **Búsqueda sin reintento:** al pedir un ejemplo de phishing bancario, el agente dijo que no encontró uno específico, mostró cuatro correos de phishing de otro tipo y ofreció buscar de nuevo, en lugar de reformular la búsqueda por su cuenta. Pasó en las dos ejecuciones. En otra prueba, con otra consulta, encontró un correo que suplanta a Bank of America. La respuesta no inventa un ejemplo, pero el prompt ya le permite buscar de nuevo y no lo hizo.
+- **Interpretaciones de más:** en el ranking de dominios, el agente agregó que los atacantes usan servicios de correo gratuitos para suplantar identidades. Es una explicación razonable, pero no surge de los datos. Ante la consulta sin evidencia, describió el paper de Attention como enfocado en "modelos de lenguaje", cuando sus experimentos son de traducción automática. Son agregados menores, fuera del dato pedido, que la regla de no agregar calificativos no termina de evitar.
+- **Recuerdo no guardado (corregido):** en pruebas posteriores, ante "Me llamo Ana y trabajo en un banco, recordalo", el agente respondía "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`, y el dato no quedaba guardado. Pasaba siempre con ese mensaje, por `temperature=0`. Tampoco guardaba "Soy desarrollador y me interesa la seguridad informática". Se corrigió en dos capas: el prompt ahora exige guardar antes de responder y prohíbe afirmar un guardado sin la tool, con un ejemplo few-shot; y un control en el nodo `agente` detecta la afirmación sin llamada y pide la respuesta de nuevo. Después de la corrección, los cinco mensajes de prueba guardaron su recuerdo y el pedido de guardar una contraseña se rechazó. En una de las pruebas fue el control el que resolvió el caso. En la ejecución del 12/11, Ana y Sofía guardaron su recuerdo al presentarse.
 - **Demo de retomar:** en el chat guionado, la pregunta "¿Cómo me llamo?" también podía responderse con la memoria a largo plazo. La prueba concluyente de la memoria a corto plazo es la del reinicio, en la tabla anterior.
 
 ## 7. Limitaciones y mejoras posibles
@@ -263,7 +265,7 @@ Verificamos contra los documentos los datos de las respuestas:
 
 - Escribir en inglés la consulta de `buscar_en_papers`: en los experimentos de la sección 12, las mismas preguntas recuperan la página correcta en 70% de los casos en inglés y en 45% en español.
 - Completar siempre `titulo_paper` cuando la pregunta nombra un paper: buscar dentro del paper correcto fue lo que más mejoró la recuperación.
-- Pasar a `multilingual-e5-base` y recalibrar el umbral, si se puede pagar una reindexación entre dos y tres veces y media más lenta.
+- Pasar a `multilingual-e5-base` y recalibrar el umbral, si se puede pagar una reindexación entre dos y casi cuatro veces más lenta.
 - Verificar cada respuesta contra los fragmentos con un nodo de validación, cuando la cuota lo permita.
 - Reformular automáticamente la búsqueda cuando los fragmentos no responden la pregunta.
 - Re-ranking de los fragmentos recuperados y búsqueda híbrida (semántica y por palabras clave).
@@ -277,7 +279,7 @@ Se desarrollaron los cuatro opcionales. Los dos que corresponden a temas vistos 
 
 - **Chunking:** se compararon el corte recursivo con cuatro tamaños, sin solapamiento, por oraciones y semántico. Ninguna estrategia mejoró de forma clara (diferencias de una a tres preguntas), así que se mantiene 800/100.
 - **Recuperación:** buscar dentro del paper correcto es lo que más mejora (de 45% a 60% en español y de 70% a 85% en inglés), lo que respalda el filtro `titulo_paper`. MMR no fue una mejora estable y top-8 duplica los tokens. El umbral 0,68 no perdió preguntas pertinentes.
-- **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa entre dos y tres veces y media más lento; se mantiene e5-small por costo.
+- **Embeddings:** se compararon `all-MiniLM-L6-v2` (el de los labs), `paraphrase-multilingual-MiniLM-L12-v2`, `multilingual-e5-small` y `multilingual-e5-base`. El de los labs acierta 30% en español. e5-base es el mejor (65% en español contra 45% de e5-small), pero indexa entre dos y casi cuatro veces más lento, según la ejecución; se mantiene e5-small por costo. Las métricas de calidad dieron idénticas en las dos ejecuciones del notebook; solo cambiaron los tiempos.
 - **Hallazgo principal:** las preguntas en español recuperan peor que las mismas en inglés. Escribir la consulta de la tool en inglés es una mejora barata que queda propuesta, porque hay que validarla con el LLM.
 
 - **API con FastAPI** (`src/api.py`): expone el mismo agente por HTTP, sin duplicar lógica. Permite conversar (`POST /chat`, que crea o continúa una conversación por `thread_id`), listar conversaciones, leer el historial desde el checkpointer y consultar los recuerdos del usuario. El agente se construye una vez al arrancar; los endpoints corren en un pool de hilos para atender usuarios en paralelo; un usuario no puede leer ni continuar conversaciones de otro (404); y los errores se traducen a códigos HTTP (422 entrada inválida, 429 cuota de Groq agotada, 502 otros errores del LLM). FastAPI genera la documentación interactiva en `/docs`. Se levanta con `uvicorn src.api:app`.
@@ -287,7 +289,7 @@ Se desarrollaron los cuatro opcionales. Los dos que corresponden a temas vistos 
 ## 8. Uso de inteligencia artificial generativa
 
 - **Herramienta:** Claude Code (Anthropic).
-- **Contexto de uso:** estructura del proyecto, redacción de documentación, exploración de datasets, análisis del estado del proyecto, corrección de errores, implementación de mejoras del chatbot, ejecución de pruebas, armado del notebook y redacción inicial de este informe.
+- **Contexto de uso:** estructura del proyecto, redacción de documentación, exploración de datasets, análisis del estado del proyecto, corrección de errores, implementación de mejoras del chatbot, ejecución de pruebas, armado y ejecución del notebook, revisión del proyecto contra la letra, redacción inicial de este informe, su actualización con los resultados del 12/11 y el script que lo convierte a PDF (`scripts/informe_a_pdf.py`).
 - **Revisión:** [PENDIENTE: cada integrante debe confirmar que esta lista refleja todo el uso real de IA y que revisó el contenido.]
 
 Todo el contenido generado con IA fue revisado y verificado por el grupo, que es responsable por los errores que pueda contener.

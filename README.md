@@ -13,15 +13,14 @@ vectorial, agentes con *tool calling* y memoria a corto y largo plazo.
 Hecho:
 
 - [x] **Código:** todo integrado en `develop`, incluidos los opcionales.
-- [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs el 9/11. 12 de 12 decisiones de tools correctas.
-- [x] **Informe:** completo en `INFORME.md`, salvo la revisión del uso de IA.
+- [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs el 12/11, con el prompt y el código finales. 12 de 12 decisiones de tools correctas.
+- [x] **Informe:** completo en `INFORME.md`, con los resultados del 12/11, salvo la revisión del uso de IA. `python -m scripts.informe_a_pdf` genera `INFORME.pdf`, que no se commitea.
 - [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
 - [x] **Opcionales:** los cuatro de la letra, en la sección 12 del notebook: experimentos de chunking, recuperación y embeddings, una API con FastAPI (`src/api.py`) y la comparación de LLMs (`src/comparacion_llms.py`).
 
 Falta terminar:
 
-- [ ] **Notebook:** volver a ejecutarlo completo antes de entregar. Sus outputs son del 9/11 y muestran el prompt anterior al cambio del 10/11 (regla y control de `guardar_recuerdo`). Después, actualizar la sección 6 del informe con los nuevos resultados.
-- [ ] **Informe:** completar el `[PENDIENTE]` de la sección 8 (revisión del uso de IA), revisarlo entre los tres y pasarlo a PDF. La letra pide que los documentos de texto vayan en PDF dentro del ZIP.
+- [ ] **Informe:** completar el `[PENDIENTE]` de la sección 8 (revisión del uso de IA), revisarlo entre los tres y regenerar el PDF. La letra pide que los documentos de texto vayan en PDF dentro del ZIP.
 - [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
 - [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
 - [ ] **ZIP de entrega:** máximo 40 MB. `data/` (431 MB) y `chroma_db/` (221 MB) no entran: el ZIP lleva el código, el notebook con outputs, el informe en PDF y el link al repositorio. Confirmar con los docentes.
@@ -128,7 +127,8 @@ La documentación interactiva queda en http://127.0.0.1:8000/docs. Endpoints: `G
 │   ├── construir_indice_papers.py
 │   ├── probar_recuperacion.py
 │   ├── probar_agente.py     # batería de consultas (usa Groq)
-│   └── probar_memoria.py    # memoria y sesiones (usa Groq)
+│   ├── probar_memoria.py    # memoria y sesiones (usa Groq)
+│   └── informe_a_pdf.py     # INFORME.md -> INFORME.pdf (Chrome o Edge headless)
 ├── data/                # dataset + papers (no se commitea)
 └── chroma_db/           # base vectorial persistida (no se commitea)
 ```
