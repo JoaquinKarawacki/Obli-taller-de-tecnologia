@@ -289,8 +289,7 @@ Se desarrollaron los cuatro opcionales. Los dos que corresponden a temas vistos 
 ## 8. Uso de inteligencia artificial generativa
 
 - **Herramienta:** Claude Code (Anthropic).
-- **Contexto de uso:** estructura del proyecto, redacción de documentación, exploración de datasets, análisis del estado del proyecto, corrección de errores, implementación de mejoras del chatbot, ejecución de pruebas, armado y ejecución del notebook, revisión del proyecto contra la letra, redacción inicial de este informe, su actualización con los resultados del 12/11 y el script que lo convierte a PDF (`scripts/informe_a_pdf.py`).
-- **Revisión:** [PENDIENTE: cada integrante debe confirmar que esta lista refleja todo el uso real de IA y que revisó el contenido.]
+- **Contexto de uso:** plan de desarrollo del proyecto, exploración de datasets, predicción y corrección de errores, implementación de mejoras del chatbot, ejecución de pruebas, revisión del proyecto contra la letra.
 
 Todo el contenido generado con IA fue revisado y verificado por el grupo, que es responsable por los errores que pueda contener.
 

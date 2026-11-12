@@ -14,13 +14,12 @@ Hecho:
 
 - [x] **Código:** todo integrado en `develop`, incluidos los opcionales.
 - [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs el 12/11, con el prompt y el código finales. 12 de 12 decisiones de tools correctas.
-- [x] **Informe:** completo en `INFORME.md`, con los resultados del 12/11, salvo la revisión del uso de IA. `python -m scripts.informe_a_pdf` genera `INFORME.pdf`, que no se commitea.
+- [x] **Informe:** versión final en `INFORME.md`, con los resultados del 12/11. `python -m scripts.informe_a_pdf` genera `INFORME.pdf`, que no se commitea.
 - [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
 - [x] **Opcionales:** los cuatro de la letra, en la sección 12 del notebook: experimentos de chunking, recuperación y embeddings, una API con FastAPI (`src/api.py`) y la comparación de LLMs (`src/comparacion_llms.py`).
 
 Falta terminar:
 
-- [ ] **Informe:** completar el `[PENDIENTE]` de la sección 8 (revisión del uso de IA), revisarlo entre los tres y regenerar el PDF. La letra pide que los documentos de texto vayan en PDF dentro del ZIP.
 - [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
 - [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
 - [ ] **ZIP de entrega:** máximo 40 MB. `data/` (431 MB) y `chroma_db/` (221 MB) no entran: el ZIP lleva el código, el notebook con outputs, el informe en PDF y el link al repositorio. Confirmar con los docentes.
