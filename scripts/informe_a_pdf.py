@@ -36,6 +36,7 @@ ESTILO = """
 body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1a1a1a; }
 h1 { font-size: 20pt; margin: 0 0 6pt; }
 h2 { font-size: 14.5pt; margin: 18pt 0 6pt; border-bottom: 1px solid #ccc; padding-bottom: 2pt; break-after: avoid; }
+h2.nueva-pagina { break-before: page; margin-top: 0; }
 h3 { font-size: 12pt; margin: 12pt 0 4pt; break-after: avoid; }
 p, li { margin: 3pt 0; }
 table { border-collapse: collapse; width: 100%; margin: 6pt 0; font-size: 9.5pt; break-inside: auto; }
@@ -61,6 +62,9 @@ def buscar_navegador() -> str:
 def main() -> None:
     convertir = mistune.create_markdown(plugins=["table", "strikethrough", "url"])
     cuerpo = convertir(ENTRADA.read_text(encoding="utf-8"))
+    # Los anexos empiezan en una página nueva. Se hace acá y no en el Markdown para
+    # que INFORME.md se siga viendo limpio en GitHub.
+    cuerpo = cuerpo.replace("<h2>Anexo", '<h2 class="nueva-pagina">Anexo')
     html = f'<!doctype html><html lang="es"><head><meta charset="utf-8"><style>{ESTILO}</style></head><body>{cuerpo}</body></html>'
 
     with tempfile.TemporaryDirectory() as carpeta:
