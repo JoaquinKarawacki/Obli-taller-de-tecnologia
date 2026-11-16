@@ -29,23 +29,7 @@ Desarrollamos los cuatro opcionales de la letra: la comparación de estrategias 
 
 ## 2. Arquitectura
 
-```
-Usuario -> chatbot (consola o notebook) o API REST (FastAPI)
-              |
-              v
-   Grafo LangGraph, escrito a mano:
-
-     START -> agente --(¿pidió tools?)--no--> END
-                ^            |
-                |            sí
-                |            v
-                +---- herramientas
-
-   Lo que usa el grafo:
-     - memoria a corto plazo: SqliteSaver, por thread_id
-     - tools de RAG: ChromaDB (búsqueda semántica) y pandas (estadísticas)
-     - memoria a largo plazo: SqliteStore, por user_id
-```
+![Arquitectura del agentic RAG](docs/arquitectura.svg)
 
 ### 2.1 Componentes
 

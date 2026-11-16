@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#1a1a1a">
+  <defs>
+    <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="900" height="640" fill="#fff"/>
+
+  <!-- Entradas -->
+  <g text-anchor="middle">
+    <rect x="90" y="20" width="200" height="48" rx="8" fill="#f3f4f6" stroke="#9ca3af"/>
+    <text x="190" y="41" font-weight="600">Chat por consola</text>
+    <text x="190" y="58" font-size="11" fill="#555">main.py · src/chatbot.py</text>
+    <rect x="350" y="20" width="200" height="48" rx="8" fill="#f3f4f6" stroke="#9ca3af"/>
+    <text x="450" y="41" font-weight="600">Notebook</text>
+    <text x="450" y="58" font-size="11" fill="#555">obligatorio_agentic_rag.ipynb</text>
+    <rect x="610" y="20" width="200" height="48" rx="8" fill="#f3f4f6" stroke="#9ca3af"/>
+    <text x="710" y="41" font-weight="600">API REST (opcional)</text>
+    <text x="710" y="58" font-size="11" fill="#555">FastAPI · src/api.py</text>
+  </g>
+  <g stroke="#555" stroke-width="1.5" fill="none">
+    <path d="M190,68 V92 H710 V68"/>
+    <path d="M450,68 V92"/>
+    <path d="M450,92 V126" marker-end="url(#f)"/>
+  </g>
+  <text x="460" y="113" font-size="11" fill="#555">mensaje nuevo + thread_id + user_id</text>
+
+  <!-- Grafo -->
+  <rect x="40" y="130" width="820" height="272" rx="12" fill="#fafbff" stroke="#6b7280" stroke-dasharray="6 4"/>
+  <text x="58" y="152" font-weight="700" fill="#374151">Grafo LangGraph · StateGraph escrito a mano (src/agente.py)</text>
+
+  <circle cx="100" cy="250" r="22" fill="#111827"/>
+  <text x="100" y="254" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">START</text>
+  <path d="M122,250 H186" stroke="#555" stroke-width="1.5" marker-end="url(#f)"/>
+
+  <rect x="190" y="190" width="210" height="120" rx="10" fill="#e8f0fe" stroke="#1a4fa0" stroke-width="2"/>
+  <g text-anchor="middle">
+    <text x="295" y="214" font-size="15" font-weight="700" fill="#1a4fa0">agente</text>
+    <text x="295" y="234" font-size="11">LLM qwen3.8-27b vía Groq</text>
+    <text x="295" y="252" font-size="11">prompt de sistema + recuerdos</text>
+    <text x="295" y="270" font-size="11">+ historial recortado</text>
+    <text x="295" y="292" font-size="11" font-style="italic" fill="#1a4fa0">¿pide herramientas?</text>
+  </g>
+
+  <path d="M400,225 H536" stroke="#555" stroke-width="1.5" marker-end="url(#f)"/>
+  <text x="468" y="217" text-anchor="middle" font-size="11" fill="#555">sí: tool calls</text>
+  <path d="M540,280 H404" stroke="#555" stroke-width="1.5" marker-end="url(#f)"/>
+  <text x="468" y="298" text-anchor="middle" font-size="11" fill="#555">resultados</text>
+
+  <rect x="540" y="165" width="290" height="185" rx="10" fill="#ecfdf3" stroke="#15803d" stroke-width="2"/>
+  <text x="685" y="189" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">herramientas</text>
+  <g font-size="11">
+    <text x="556" y="212" font-weight="700" fill="#15803d">RAG (búsqueda semántica)</text>
+    <text x="566" y="228">· buscar_en_papers</text>
+    <text x="566" y="243">· buscar_en_dataset</text>
+    <text x="566" y="258">· listar_papers</text>
+    <text x="556" y="280" font-weight="700" fill="#15803d">Dataset (pandas)</text>
+    <text x="566" y="296">· estadisticas_dataset</text>
+    <text x="566" y="311">· ranking_dataset</text>
+    <text x="556" y="333" font-weight="700" fill="#15803d">Memoria</text>
+    <text x="628" y="333">· guardar_recuerdo</text>
+  </g>
+
+  <path d="M295,310 V346" stroke="#555" stroke-width="1.5" marker-end="url(#f)"/>
+  <text x="305" y="333" font-size="11" fill="#555">no: responde</text>
+  <circle cx="295" cy="370" r="22" fill="#111827"/>
+  <text x="295" y="374" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">END</text>
+
+  <!-- Conexiones con persistencia -->
+  <g stroke="#555" stroke-width="1.5" fill="none">
+    <path d="M210,314 V446" marker-start="url(#f)" marker-end="url(#f)"/>
+    <path d="M380,314 L430,450" marker-start="url(#f)"/>
+    <path d="M600,352 L530,446" marker-end="url(#f)"/>
+    <path d="M730,354 V446" marker-start="url(#f)" marker-end="url(#f)"/>
+  </g>
+  <g font-size="11" fill="#555">
+    <text x="90" y="428">historial por thread</text>
+    <text x="408" y="428" text-anchor="end">lee recuerdos</text>
+    <text x="570" y="428">guarda</text>
+    <text x="740" y="428">consulta</text>
+  </g>
+
+  <!-- Almacenamiento -->
+  <g text-anchor="middle">
+    <rect x="40" y="450" width="260" height="90" rx="10" fill="#f5f0ff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="170" y="474" font-size="14" font-weight="700" fill="#7c3aed">Memoria a corto plazo</text>
+    <text x="170" y="495" font-size="11">SqliteSaver (checkpointer)</text>
+    <text x="170" y="512" font-size="11">una conversación por thread_id</text>
+    <text x="170" y="529" font-size="11">pausar y retomar sin perder contexto</text>
+
+    <rect x="320" y="450" width="260" height="90" rx="10" fill="#f5f0ff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="450" y="474" font-size="14" font-weight="700" fill="#7c3aed">Memoria a largo plazo</text>
+    <text x="450" y="495" font-size="11">SqliteStore</text>
+    <text x="450" y="512" font-size="11">recuerdos por user_id,</text>
+    <text x="450" y="529" font-size="11">compartidos entre conversaciones</text>
+
+    <rect x="600" y="450" width="260" height="90" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+    <text x="730" y="474" font-size="14" font-weight="700" fill="#c2410c">Datos</text>
+    <text x="730" y="495" font-size="11">ChromaDB: colecciones papers y dataset</text>
+    <text x="730" y="512" font-size="11">embeddings multilingual-e5-small</text>
+    <text x="730" y="529" font-size="11">pandas: dataset consolidado (CSV)</text>
+  </g>
+
+  <!-- Ingesta -->
+  <path d="M730,582 V544" stroke="#555" stroke-width="1.5" marker-end="url(#f)"/>
+  <rect x="40" y="582" width="820" height="40" rx="8" fill="#f9fafb" stroke="#d1d5db"/>
+  <text x="450" y="607" text-anchor="middle" font-size="11" fill="#374151"><tspan font-weight="700">Ingesta previa (offline): </tspan>PDFs de papers y CSV de Kaggle → chunks de 800 caracteres (100 de solapamiento) → embeddings e5-small → ChromaDB</text>
+</svg>

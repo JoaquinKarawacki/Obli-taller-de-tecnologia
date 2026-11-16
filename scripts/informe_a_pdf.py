@@ -48,6 +48,7 @@ pre { background: #f4f4f4; padding: 6pt 8pt; border-radius: 3px; break-inside: a
 pre code { background: none; padding: 0; }
 hr { border: none; border-top: 1px solid #ccc; margin: 12pt 0; }
 a { color: #1a4fa0; }
+img { width: 100%; margin: 6pt 0; }
 """
 
 
@@ -65,7 +66,7 @@ def main() -> None:
     # Los anexos empiezan en una página nueva. Se hace acá y no en el Markdown para
     # que INFORME.md se siga viendo limpio en GitHub.
     cuerpo = cuerpo.replace("<h2>Anexo", '<h2 class="nueva-pagina">Anexo')
-    html = f'<!doctype html><html lang="es"><head><meta charset="utf-8"><style>{ESTILO}</style></head><body>{cuerpo}</body></html>'
+    html = f'<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="{RAIZ.as_uri()}/"><style>{ESTILO}</style></head><body>{cuerpo}</body></html>'
 
     with tempfile.TemporaryDirectory() as carpeta:
         archivo_html = Path(carpeta) / "informe.html"
