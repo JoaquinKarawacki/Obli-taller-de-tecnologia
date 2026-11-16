@@ -6,27 +6,19 @@ vectorial, agentes con *tool calling* y memoria a corto y largo plazo.
 
 > 📄 Plan completo y fases: [`PLAN.md`](./PLAN.md) · Decisiones y avances: [`BITACORA.md`](./BITACORA.md)
 
-## Estado actual (12/11/2026): trabajo en curso
+## Entrega (16/11/2026)
 
-**Todavía no está listo para entregar.** Entrega: 16/11/2026 a las 21:00.
+Repositorio: https://github.com/JoaquinKarawacki/Obli-taller-de-tecnologia · versión entregada: release `v1.0` (rama `main`).
 
-Hecho:
+El ZIP de entrega (`entrega_obligatorio_tt2.zip`, adjunto al release) contiene:
 
-- [x] **Código:** todo integrado en `develop`, incluidos los opcionales.
-- [x] **Notebook:** `obligatorio_agentic_rag.ipynb`, ejecutado completo con Groq y con outputs el 12/11, con el prompt y el código finales. 12 de 12 decisiones de tools correctas.
-- [x] **Informe:** versión final en `INFORME.md`, con los resultados del 12/11. `python -m scripts.informe_a_pdf` genera `INFORME.pdf`, que no se commitea.
-- [x] **`requirements.txt`:** versiones fijadas, probadas con Python 3.14.3.
-- [x] **Opcionales:** los cuatro de la letra, en la sección 12 del notebook: experimentos de chunking, recuperación y embeddings, una API con FastAPI (`src/api.py`) y la comparación de LLMs (`src/comparacion_llms.py`).
+- `INFORME.pdf`: documentación del sistema (generado desde `INFORME.md` con `python -m scripts.informe_a_pdf`).
+- `obligatorio_agentic_rag.ipynb`: notebook ejecutado con Groq, con todos sus outputs.
+- El código (`main.py`, `src/`, `scripts/`), `requirements.txt`, `.env.example`, `docs/` y `resultados/`.
 
-Falta terminar:
+No incluye `data/` (431 MB) ni `chroma_db/` (221 MB) porque superan el límite de 40 MB: se regeneran con los pasos de *Puesta en marcha*.
 
-- [ ] **Prueba con Groq:** el reintento de tools mal armadas, la limpieza de `</think>` y el aviso de cuota agotada solo se probaron de forma simulada, porque esas fallas no se dieron en la ejecución real.
-- [ ] **Instalación limpia:** las versiones fijadas no se probaron desde un entorno nuevo.
-- [ ] **ZIP de entrega:** máximo 40 MB. `data/` (431 MB) y `chroma_db/` (221 MB) no entran: el ZIP lleva el código, el notebook con outputs, el informe en PDF y el link al repositorio. Confirmar con los docentes.
-- [ ] **Integración:** mergear `develop` a `main` cuando esté todo cerrado. Hoy `main` solo tiene la letra.
-- [ ] **Defensa y presentación oral:** preparar entre el 16 y el 27 de noviembre.
-
-A confirmar con los docentes: la letra dice hasta 3 integrantes en la página 1 y hasta 2 en la página 4.
+Pendiente: la defensa y la presentación oral (entre el 16 y el 27 de noviembre).
 
 **Cuota de Groq:** el plan gratuito permite 200.000 tokens por día y 8.000 por minuto, lo que da unas 40 preguntas por día. Conviene no gastarla en pruebas antes de ejecutar el notebook o defender.
 
