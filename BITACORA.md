@@ -1,0 +1,296 @@
+# BITÁCORA — Decisiones de diseño y avances
+
+> Registro vivo del proyecto. Cada decisión relevante y cada avance se anota acá,
+> con fecha, para poder justificarlo en el informe y en la defensa.
+> El plan y las tareas están en [`PLAN.md`](./PLAN.md).
+
+---
+
+## Registro de decisiones (ADR liviano)
+
+Formato: **fecha — decisión — motivo — alternativas descartadas**.
+
+### 2026-09-24 — Orquestación con LangGraph (grafo manual)
+- **Decisión:** construir el agente armando el grafo a mano (estado + nodos + edges).
+- **Motivo:** la letra prohíbe `create_agent()` / `create_react_agent()` y abstracciones que oculten la lógica.
+- **Alternativas descartadas:** helpers prearmados de LangChain/LangGraph.
+
+### 2026-09-24 — Base vectorial: ChromaDB
+- **Decisión:** usar Chroma persistente en disco, con colecciones separadas para `dataset` y `papers`.
+- **Motivo:** setup simple, local, sin cuenta cloud; suficiente para el volumen del obligatorio.
+- **Alternativas descartadas:** Pinecone/Qdrant (más setup), FAISS (sin persistencia cómoda de metadatos).
+
+### 2026-09-24 — LLM: Groq (Llama 3.3 70B)
+- **Decisión:** `llama-3.3-70b-versatile` vía Groq (`langchain-groq`).
+- **Motivo:** gratis (free tier), muy rápido y con buen tool calling. Mantiene el proyecto sin costo.
+- **Alternativas descartadas:** OpenAI (requiere pago), Gemini (opción válida), Ollama (necesita hardware).
+- **Requiere:** API key gratuita de Groq en `.env` (`GROQ_API_KEY`).
+
+### 2026-09-24 — Embeddings: sentence-transformers multilingüe (local)
+- **Decisión:** `intfloat/multilingual-e5-small` con `sentence-transformers`, corriendo local.
+- **Motivo:** Groq no ofrece API de embeddings; este modelo es gratis, local y bueno para **español**.
+- **Alternativas / opcional:** comparar con otros modelos multilingües (Fase 8).
+
+### 2026-09-24 — Estructura: módulos .py en vez de notebook
+- **Decisión:** el equipo optó por **archivos `.py` separados** (uno por fase) en lugar de un único notebook, por ser más modular y legible y permitir trabajo en paralelo.
+- **La letra dice "preferentemente `.ipynb`"** para la implementación, pero pide "notebook funcional y con sus outputs" como entregable. **Corrección del 2026-11-05:** el notebook se trata como obligatorio. Importa los módulos y muestra outputs (`obligatorio_agentic_rag.ipynb`).
+- **Alternativa descartada:** todo en un solo notebook (menos legible, difícil de dividir entre integrantes).
+
+### 2026-09-24 — Consolidación del dataset en un único CSV
+- **Decisión:** unir los 6 corpus individuales en `data/dataset_consolidado.csv` con columnas `fuente, sender, subject, body, urls, label`.
+- **Motivo:** el dataset trae 7 CSV; `phishing_email.csv` ya es una combinación pero **pierde metadatos** (sender, urls). Se arma uno propio conservando lo relevante.
+- **Detalles:** se descartan `receiver` y `date` (poco útiles/inconsistentes); Enron y Ling no tienen `sender`/`urls` (quedan NaN); se quitan duplicados por `(subject, body)`.
+- **Resultado:** 82.486 filas (42.891 phishing / 39.595 legítimos). Archivo de ~145 MB, regenerable con `python -m scripts.consolidar_dataset` (no se commitea).
+
+### 2026-09-24 — Interfaz: Gradio
+*(Reemplazada: ver 2026-11-09 "Opcional: API con FastAPI" y 2026-11-12.)*
+- **Decisión:** UI de chat con Gradio para la demo/defensa.
+- **Motivo:** opcional que suma; se arma en pocas líneas y es visual.
+- **Alternativa descartada:** FastAPI (más trabajo, sin UI directa).
+
+### 2026-09-24 — Fase 2: ingesta del dataset (muestra 10k)
+- **Decisión:** indexar una **muestra balanceada de 10.000 correos** (5k phishing / 5k legítimos), **por indicación del profe** (no todo el dataset). Tamaño configurable en `config.py` (`TAMANO_MUESTRA`).
+- **Chunking:** `RecursiveCharacterTextSplitter`, `chunk_size=800`, `chunk_overlap=100` → ~33.792 fragmentos.
+- **Embeddings:** `intfloat/multilingual-e5-small` (locales, multilingües) con subclase `EmbeddingsE5` que agrega los prefijos `passage:`/`query:` que exige e5.
+- **Base vectorial:** ChromaDB persistido en `chroma_db/`, colección `dataset`, metadatos por chunk (fuente, sender, urls, label, id_correo).
+- **Indexado por lotes:** se insertan de a 500 fragmentos. **Motivo:** hacerlo todo junto con `Chroma.from_documents` agotó la RAM y el proceso fue matado; por lotes el pico de memoria se mantiene bajo.
+
+### 2026-09-24 — Dataset elegido: Phishing Email Dataset (inglés)
+- **Decisión:** usar `naserabdullahalam/phishing-email-dataset` (Kaggle). Temática: **ciberseguridad / correos de phishing**.
+- **Motivo:** texto real de correos (asunto + cuerpo + etiqueta phishing/legítimo), ideal para RAG y para un chatbot demostrable ("¿este correo es phishing?", "¿qué patrones usan?").
+- **Idioma de los datos:** inglés.
+- **Descarga:** vía `kagglehub` (`kagglehub.dataset_download("naserabdullahalam/phishing-email-dataset")`).
+
+### 2026-09-24 — Enfoque multilingüe (datos EN, chatbot ES+EN)
+- **Decisión:** los datos están en inglés pero el chatbot interactúa en **español e inglés** (responde en el idioma en que le hablen).
+- **Implicancia clave:** se usa **LLM multilingüe** (Llama 3.3 70B, ya elegido) y **embeddings multilingües** (`multilingual-e5-small`, ya elegido) para permitir **retrieval cross-lingual**: una pregunta en español recupera correctamente fragmentos en inglés.
+- **Alternativa descartada:** embeddings solo-inglés (romperían las consultas en español).
+
+### 2026-09-24 — Código 100% en español
+- **Decisión:** todo el código (variables, funciones, clases, comentarios, docstrings, logs, prompts y textos al usuario) se escribe en **español**.
+- **Motivo:** coherencia con el proyecto y claridad para el grupo y la defensa.
+- **Excepción:** nombres propios de librerías/APIs se mantienen (`LangGraph`, `thread_id`, etc.).
+
+### 2026-09-24 — Flujo de Git: una rama por tarea → merge a develop
+- **Decisión:** trabajar con **una rama por feature/tarea** que sale de `develop` (`feature/...`, `fix/...`, `docs/...`), y al terminar **mergear a `develop`**. `main` es la rama estable de entrega.
+- **Motivo:** historial ordenado, trabajo paralelo entre integrantes y `develop` siempre integrable.
+
+### 2026-10-01 — Papers: los 6 PDFs de la materia (colección `papers`)
+- **Decisión:** indexar los 6 documentos de "Obligatorio setiembre 2026 - Papers" (Attention, GPT, GPT-3, Scaling Laws, Subliminal Learning y el libro *Designing Data-Intensive Applications*), copiados a `data/papers/`.
+- **Cómo:** `pypdf` extrae el texto **página por página** (para guardar el número de página y poder citar), se limpia (guiones de corte de línea, saltos), chunking 800/100 y embeddings e5 → colección `papers`, por lotes. Metadatos: `titulo`, `archivo`, `pagina`.
+- **Resultado:** 2.937 fragmentos (2.191 son del libro de Kleppmann). Indexado en ~9 min en CPU.
+- **Títulos legibles** en `config.TITULOS_PAPERS`: sirven para citar y para filtrar la búsqueda por paper.
+
+### 2026-10-01 — Fase 3: recuperación como tools + umbral de relevancia
+- **Decisión:** adaptar el pipeline del `Demo_vectoriales_crawler` (`search` + `format_message`) a `src/recuperacion.py`: `buscar_fragmentos()` (top-k con puntaje 0-1) y `formatear_fragmentos()` (contexto numerado con la fuente: paper + página, o corpus + etiqueta del correo).
+- **Tools para el agente:** `buscar_en_papers` (filtro opcional por paper, con título aproximado), `buscar_en_dataset` (filtro opcional phishing/legítimo), `listar_papers` y `estadisticas_dataset` (conteos con pandas: la búsqueda semántica no sirve para contar).
+- **Control de alucinaciones:** si ningún fragmento supera `UMBRAL_RELEVANCIA` la tool devuelve `SIN EVIDENCIA` en vez de fragmentos irrelevantes, y si una colección no está construida devuelve un `ERROR` explícito (no "no hay nada").
+- **Umbral = 0.68** (calibrado, ver "Desafíos"). Es un piso; el router y el prompt del generador completan el filtrado.
+
+### 2026-10-01 — Reutilizar el Lab03 (RAG Pipeline) en el pipeline de papers
+- **Decisión:** alinear la ingesta y la recuperación con lo visto en el Lab03, para que el código sea el del curso y fácil de defender:
+  - `PyPDFLoader` (un `Document` por página) + `normalize_text` (→ `normalizar_texto`, preprocesamiento mínimo) + `split_documents`. Se verificó que el resultado es **idéntico** al índice que ya estaba construido (2.937 fragmentos), así que no hubo que reindexar.
+  - `LongContextReorder` sobre los fragmentos recuperados (problema "Lost in the Middle"): los más relevantes van a los extremos del contexto.
+  - Filtros por metadata (Parte 3 del lab), pero con metadata **real** (`titulo`, `pagina`, `label`) en vez de sintética.
+  - Pregunta con contexto vs. sin contexto (Parte 1): queda para el notebook demo (necesita el LLM).
+- **Nota:** `PyPDFLoader` y `LongContextReorder` vienen de `langchain-community`, que LangChain marcó como *sunset* (sin mantenimiento activo). Funciona; si en el futuro se rompe, ambos son triviales de reemplazar (`pypdf` directo y un reordenamiento de 5 líneas).
+
+### 2026-10-01 — LLM: cambio a Qwen 3.8 27B (Groq)
+- **Decisión:** usar `qwen/qwen3.8-27b` vía Groq. Se mantiene Groq como único proveedor (sin alternativa, por simplicidad).
+- **Motivo:** `llama-3.3-70b-versatile` **ya no existe en Groq** (error 404 `model_not_found`). Modelos de chat disponibles: `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`.
+- **Prueba de tool calling** con las tools del proyecto y preguntas en español: ambos candidatos eligieron bien la tool (papers / estadísticas) y respondieron el small-talk sin buscar; `gpt-oss-120b` le pasó un argumento inventado a una tool sin parámetros, Qwen no cometió errores → se elige Qwen.
+
+### 2026-10-01 — Chroma (local) en vez de Pinecone
+- **Decisión:** mantener **ChromaDB local** aunque el Lab03 use Pinecone.
+- **Motivo:** no requiere cuenta ni API key (los docentes pueden correrlo sin nuestras credenciales), funciona sin internet (la defensa no depende de la red ni de la cuota del plan gratuito de Pinecone) y el índice persiste en una carpeta (`chroma_db/`, ~26 MB con los papers) que puede reutilizarse sin reindexar. La letra admite cualquiera ("Pinecone, Qdrant, Chroma, FAISS").
+- **Alternativa descartada:** Pinecone — su ventaja (índice en la nube, sin reindexar) se cubre guardando `chroma_db/`.
+
+### 2026-10-29 — Fase 4: grafo del agente (loop agente ↔ herramientas, escrito a mano)
+- **Decisión:** grafo de 2 nodos, `agente` (LLM con las tools bindeadas) y `herramientas` (ejecuta las tools pedidas), con un edge condicional `decidir_siguiente`: si el LLM pidió tools va a `herramientas` y vuelve al `agente`; si no, termina. Es el patrón ReAct, pero armado a mano como en la Parte 3/4 del Lab04.
+- **Motivo:** la letra prohíbe `create_react_agent()` y abstracciones que oculten la lógica. Lo que sí pide es que el agente decida dinámicamente el tipo de consulta y use tool calling: este loop lo cumple con la menor cantidad de piezas, y cada una se puede explicar en la defensa.
+- **Sin `ToolNode` ni `tools_condition`** (los usa el Lab04): vienen de `langgraph.prebuilt`, el mismo módulo que `create_react_agent`. Escribirlos a mano son ~10 líneas y evita la discusión de si cuentan como "abstracción de alto nivel".
+- **Sin nodo router aparte:** el propio LLM decide (guiado por el prompt de sistema) si responde directo (small-talk, preguntas generales) o llama a tools (papers, dataset). Donde antes en esta bitácora se habla del "router", ese rol lo cumple el nodo `agente`. Un router con una llamada extra al LLM duplicaría el consumo de tokens (ver límite de Groq abajo) sin aportar a lo que pide la letra.
+- **Prompt de sistema** fuera del estado: se antepone en cada llamada al LLM, así no se repite en el historial que guardará la memoria (Fase 5).
+- **`construir_agente(checkpointer, store)`** ya recibe la memoria como parámetro, para enchufar la Fase 5 sin tocar el grafo.
+
+### 2026-10-29 — LLM: sin razonamiento + reintentos (límite de Groq)
+- **Problema:** el plan gratuito de Groq limita `qwen/qwen3.8-27b` a **1000 tokens de salida por minuto**; la batería de pruebas cortó con error 429. Qwen 3 además "piensa" antes de responder y esos tokens cuentan para el límite.
+- **Decisión:** `reasoning_effort="none"` (sin razonamiento), `max_retries=6` (el cliente de Groq espera lo que indica la API y reintenta) y pedir respuestas concisas en el prompt. Con eso la batería completa corre sin errores y la elección de tools sigue siendo correcta.
+- **Alternativa descartada:** otro proveedor o un LLM de respaldo (decisión del equipo: solo Groq, simple).
+
+### 2026-10-29 — Fase 5: memoria en SQLite (checkpointer + store) y tool `guardar_recuerdo`
+- **Corto plazo:** `SqliteSaver` (checkpointer de LangGraph). Guarda el estado de cada conversación por `thread_id` después de cada paso. Mismo `thread_id` → se retoma donde quedó; otro → conversación nueva e independiente.
+- **Largo plazo:** `SqliteStore` (store de LangGraph), namespace `("usuarios", user_id, "recuerdos")`. Compartido entre todas las conversaciones del usuario.
+- **Qué guardar lo decide el agente:** tool `guardar_recuerdo(recuerdo)`. El prompt le indica guardar datos duraderos del usuario (nombre, trabajo, intereses, preferencias, nivel), uno por llamada, sin repetir y nunca datos sensibles.
+- **Cuándo usarlo:** en cada turno el nodo `agente` lee los recuerdos del usuario y los agrega al prompt de sistema. Son pocos por usuario, así que se pasan todos (no hace falta búsqueda semántica sobre la memoria).
+- **Seguridad entre usuarios:** `user_id` y `store` son argumentos `InjectedToolArg`: el LLM no los ve ni los completa, los agrega el nodo `herramientas` desde el config de la sesión. Así un usuario no puede escribir en la memoria de otro.
+- **Sesiones en paralelo:** cada invocación lleva `{"configurable": {"thread_id", "user_id"}}`; probado con dos usuarios en hilos simultáneos.
+- **Por qué SQLite y no `MemorySaver`/`InMemoryStore`:** la letra pide "pausar y retomar sin pérdida de contexto"; en RAM se pierde todo al cerrar el programa. SQLite es un archivo local (`memoria.sqlite3`, no se commitea), sin servidor, y viene como paquete oficial de LangGraph (`langgraph-checkpoint-sqlite`).
+- **`construir_agente(checkpointer, store)`** ahora los pide obligatorios: un solo camino de código. Las pruebas que no deben ensuciar la memoria (`probar_agente.py`) pasan las versiones en RAM.
+- **Mejora posible (no implementada):** recortar el historial de conversaciones muy largas (hoy se manda completo al LLM).
+
+### 2026-10-29 — Fase 6: chatbot por consola con comandos de sesión
+- **Decisión:** `src/chatbot.py::iniciar_chat()` arma el agente **una sola vez** (con las memorias persistentes) y entra en un loop de `input()`. `main.py` lo lanza tras verificar `GROQ_API_KEY`.
+- **Comandos** (`/nueva`, `/usuario <id>`, `/ayuda`, `/salir`): dan control sobre `thread_id` y `user_id` para **demostrar en vivo** la memoria (retomar/empezar conversación, cambiar de usuario) sin reiniciar el programa. El resto se trata como mensaje para el agente.
+- **El loop no acumula mensajes:** en cada turno manda solo el mensaje nuevo; el encadenamiento lo hace el checkpointer por `thread_id` (ver Fase 5). Cada turno muestra qué tools usó el agente (evidencia del RAG).
+- **Robustez:** el `invoke` va en `try/except` para que un error de la API (p. ej. 429 de Groq) no corte la sesión. Mensaje de "Cargando modelo..." al construir el agente (la primera búsqueda carga los embeddings, ~470 MB).
+- **Alcance:** el notebook demo (entregable) y el demo "con/sin contexto" quedan para las Fases 6 (resto) y 7.
+
+### 2026-11-05 — Retomar conversaciones desde el chat y robustez del agente
+- **Retomar:** el chat no podía volver a una conversación, aunque el checkpointer la tuviera guardada. Se agregan `/conversaciones` y `/retomar <id>`, con un índice por usuario en el store (`("usuarios", user_id, "conversaciones")`). El índice también impide retomar conversaciones de otro usuario.
+- **Fallas de tools:** una excepción en una tool dejaba guardada una llamada sin respuesta. Ahora el nodo `herramientas` siempre devuelve un `ToolMessage` y el error se informa como `ERROR`.
+- **Títulos de papers:** se agregan patrones (`config.PATRONES_PAPERS`) para nombres como "gpt3" o "transformer". Un nombre ambiguo devuelve la lista de documentos en vez de elegir un paper al azar.
+- **`max_tokens=900`:** sin este valor Groq estimaba más de 1000 tokens de salida y rechazaba el pedido con un 429 que los reintentos no resolvían. Desventaja: una respuesta muy larga se corta.
+
+### 2026-11-05 — Calidad de respuestas (pruebas reales con Groq)
+- **Prompt:** se agregan 3 ejemplos few-shot (conocimiento general, dato presente en el fragmento y dato ausente), una regla contra calificativos no respaldados y un máximo de 400 palabras. Motivo: el agente llamó "el más pequeño" a GPT-3 3B, omitió la aclaración de conocimiento general y una respuesta se cortó.
+- **`ranking_dataset`:** nueva tool para remitentes, dominios y asuntos más frecuentes. Informa sobre cuántos correos se calculó, porque `sender` falta en cerca del 40%.
+- **Historial:** `recortar_historial` quita de los turnos anteriores los fragmentos y las llamadas a tools, y aplica una ventana de 12 mensajes. El checkpointer conserva todo; el recorte solo afecta lo que ve el LLM.
+- **Seguimientos:** con ese recorte, una pregunta de seguimiento se respondió sin buscar e inventó datos del modelo big. El prompt ahora exige buscar todo dato que no esté escrito en respuestas previas.
+- **Fallas del modelo:** `invocar_llm` reintenta el 400 "tool call validation failed" y elimina el razonamiento filtrado con `</think>`.
+- **Límites de Groq medidos:** 8000 tokens por minuto, 200.000 por día y 1000 pedidos por día, sumando entrada y salida. Cada llamada pidió entre 2000 y 3000 tokens, y una pregunta con búsqueda hace al menos dos. El cupo diario se recupera de a poco, unos 139 tokens por minuto. `invocar_llm` espera los límites cortos y falla enseguida si se agotó la cuota diaria.
+
+### 2026-11-09 — Notebook ejecutado e informe
+- **Notebook:** `obligatorio_agentic_rag.ipynb` se ejecutó completo con Groq en 11 minutos, sin errores. Resultado: 12 de 12 decisiones de tools correctas y 33 segundos promedio por consulta. Las cifras de las respuestas se verificaron contra los documentos.
+- **Informe:** borrador en `INFORME.md`, escrito en Markdown para versionarlo con el código. Se pasa a PDF con Chrome.
+- **Dependencias:** se fijaron en `requirements.txt` las versiones que funcionaron con Python 3.14.3.
+
+### 2026-11-09 — Opcionales: chunking, recuperación y embeddings
+- **Decisión:** se desarrollan primero los opcionales que corresponden a temas vistos en clase (chunking y recuperación, embeddings). La comparación de LLMs y la interfaz con Gradio quedan para después. Van en la sección 12 del notebook, con el código en `src/experimentos.py`.
+- **Método:** 20 preguntas sobre los 5 papers, en español y en inglés, con la página de la respuesta verificada en el PDF. Métricas: acierto@4 y MRR por página correcta. 8 consultas ajenas para medir la separación de puntajes. Sin LLM, con Chroma en memoria.
+- **Diferencia con el experimento del 2026-10-01** (quitado en `943a89f`): ese medía si el fragmento contenía una frase, con 9 preguntas. Con frases genéricas como "overfitting" el acierto dependía de dónde aparecía la palabra; por eso ahora se compara la página.
+- **Resultados principales:**
+  - El chunking no cambia la recuperación de forma clara (diferencias de 1 a 3 preguntas). Se mantiene 800/100.
+  - El filtro por paper es lo que más mejora (top-4 de 45% a 60% en español y de 70% a 85% en inglés).
+  - Las preguntas en español aciertan menos que en inglés (45% contra 70% con e5-small).
+  - `multilingual-e5-base` recupera mejor en español (65%), pero indexa entre dos y tres veces y media más lento. Se mantiene e5-small.
+  - El umbral 0,68 corta 6 de 8 consultas ajenas sin perder pertinentes.
+- **Mejoras propuestas, sin implementar:** escribir la consulta de la tool en inglés, completar siempre `titulo_paper`, y pasar a e5-base si se reindexa.
+
+### 2026-11-09 — Opcional: API con FastAPI
+- **Decisión:** `src/api.py` expone el agente por HTTP. Reutiliza `construir_agente` y las memorias, sin duplicar lógica. Se eligió FastAPI antes que Gradio porque ya venía instalado (dependencia de Gradio) y una API muestra la integración con otras aplicaciones. Gradio no se vio en clase y queda como posible interfaz sobre la API.
+- **Diseño:** el agente se construye una vez en el `lifespan`; los endpoints son `def` para que corran en un pool de hilos (usuarios en paralelo); un `thread_id` que no está en el índice del usuario da 404, la misma regla que `/retomar`; la entrada se valida con Pydantic (422), y la cuota de Groq agotada se informa con 429.
+- **Pruebas:** con `TestClient` (sección 12.6 del notebook) y con `uvicorn` real (`/salud` y `/docs` responden).
+- **Problema encontrado (resuelto el 2026-11-10, ver abajo):** en una prueba, ante "Me llamo Ana y trabajo en un banco, recordalo", el agente respondió "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`, y el recuerdo no se guardó. No es un problema de la API: es el LLM afirmando una acción que no hizo. En la ejecución del notebook de la mañana el recuerdo sí se guardó, así que es intermitente. Hay que revisarlo con la cuota renovada.
+
+### 2026-11-10 — Recuerdos afirmados sin guardar
+- **Problema:** ante "Me llamo Ana y trabajo en un banco, recordalo" el LLM respondía "Guardé que trabajás en un banco" sin llamar a `guardar_recuerdo`. Con `temperature=0` pasaba siempre con ese mensaje. Además, "Soy desarrollador y me interesa la seguridad informática" no se guardaba. Toca dos requisitos: decidir qué guardar en memoria y no afirmar información falsa.
+- **Primer intento, solo prompt:** regla "un dato solo queda guardado si llamás a guardar_recuerdo; nunca digas que lo guardaste sin llamarla" y un ejemplo few-shot. Arregló el segundo caso, pero no el primero, y el modelo copiaba la frase de respuesta del ejemplo, incluso a un mensaje en inglés.
+- **Solución:** además del prompt (con el ejemplo sin frase de respuesta fija), un control en `nodo_agente`: si la respuesta final dice haber guardado algo (`AFIRMA_GUARDADO`) y en el turno no hubo llamada a `guardar_recuerdo`, se le avisa al LLM y se pide la respuesta de nuevo, una sola vez. El aviso no queda en el historial. Solo gasta una llamada extra cuando se dispara.
+- **Validación con Groq:** cinco mensajes con datos personales (español e inglés) guardaron su recuerdo; "Recordá que mi contraseña es 1234" se rechazó. En una corrida, el control fue el que resolvió el caso de Ana. Regresión con tres casos de la batería (papers, sin evidencia, estadísticas): mismas tools que antes y sin recuerdos guardados de más.
+- **Pendiente:** el notebook se ejecutó con el prompt anterior; hay que volver a ejecutarlo antes de entregar. A un mensaje personal en inglés, el agente a veces confirma en español.
+
+### 2026-11-10 — Opcional: comparación de LLMs
+- **Método:** mismo agente con tres LLMs de Groq (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`), 10 casos de la batería. Se mide si usó las tools esperadas, si la respuesta contiene el dato verificable, el tiempo, las llamadas y los tokens (con un callback). Además se leyeron todas las respuestas. `construir_agente` y `crear_llm` aceptan ahora el modelo como parámetro; gpt-oss no permite apagar el razonamiento, así que usa el nivel bajo.
+- **Ejecución:** Groq cuenta la cuota por modelo, así que los tres corrieron en paralelo. La primera corrida falló antes de llamar al LLM: el `user_id` llevaba el nombre del modelo, y el store no admite puntos en el namespace; además, inicializar la misma base SQLite desde tres hilos a la vez fallaba. Se corrigió limpiando el `user_id` y creando las memorias antes de lanzar los hilos.
+- **Verificación:** el patrón de "42.891" no aceptaba el espacio fino que usa gpt-oss ("42 891"), y daba falsos negativos; se corrigió.
+- **Resultados:** tools correctas 10 de 10 en los tres. En la revisión manual: Qwen 10 de 10 sin observaciones; gpt-oss-120b 7 de 10 (perdió el contexto del seguimiento y respondió sobre GPT-3, contestó en español a la pregunta en inglés, dejó marcas de cita "【1†…】"); gpt-oss-20b 8 de 10 (idioma, y presentó como bancario un correo que no lo era). gpt-oss-120b fue el más rápido (20,7 s de media contra 30,7).
+- **Decisión:** se mantiene Qwen. Los resultados quedan en `resultados/comparacion_llms.json` y la sección 12.7 del notebook los lee.
+
+### 2026-11-12 — Revisión contra la letra antes de entregar
+- **Estado:** todas las ramas están mergeadas en `develop`; `main` todavía solo tiene la letra.
+- **Gradio:** se quita de `requirements.txt` porque ningún módulo lo usa. La interfaz queda como chat por consola y API con FastAPI, que está fijada por separado. Reemplaza la decisión del 2026-09-24.
+- **Pendiente para entregar:** volver a ejecutar el notebook, porque sus outputs son del 9/11 y muestran el prompt anterior al del 10/11; completar la revisión del uso de IA en el informe y pasarlo a PDF; probar una instalación limpia; armar el ZIP de 40 MB sin `data/` ni `chroma_db/`, y mergear `develop` a `main`.
+
+### 2026-11-12 — Notebook ejecutado con la versión final
+- **Ejecución:** `jupyter nbconvert --execute`, de punta a punta y sin errores, en 25 minutos. Ya muestra el prompt final.
+- **Resultados:** 12 de 12 decisiones de tools correctas, con 36 s de media. Las métricas de los experimentos de chunking, recuperación y embeddings dieron idénticas a las del 9/11; solo cambiaron los tiempos. e5-base indexó 3,7 veces más lento que e5-small, contra 2,3 la vez anterior.
+- **Cambios observados:** "¿Qué es el few-shot learning?" ahora busca en los papers. Ana y Sofía guardaron su recuerdo al presentarse. Siguen sin resolverse el ejemplo de phishing bancario, que no se reformula solo, y algunos agregados interpretativos menores.
+- **Informe:** se actualizaron las secciones 6 y 7 y se agregó `scripts/informe_a_pdf.py` (Markdown con `mistune`, que viene con Jupyter, y PDF con Chrome o Edge headless). `INFORME.pdf` no se commitea porque se regenera.
+
+---
+
+## Temática / dataset — DECIDIDO
+
+- ✅ **Dataset:** `naserabdullahalam/phishing-email-dataset` — Phishing Email Dataset (Kaggle).
+- **Temática:** ciberseguridad / correos de phishing. **Idioma:** inglés.
+- **Chatbot:** multilingüe (ES + EN).
+
+### Opciones evaluadas antes (descartadas)
+| Género | Dataset (Kaggle) | Motivo de descarte |
+|--------|------------------|--------------------|
+| 📰 Noticias ES | Spanish News Classification | Se optó por temática de ciberseguridad |
+| 🎬 Cine ES | IMDB 50K Movie Reviews (Spanish) | ídem |
+| 🏨 Hoteles ES | Andalusian Hotels' Reviews | ídem |
+| 🩺 Enfermedades ES | — | Texto médico en español escaso en Kaggle |
+
+---
+
+## Diario de avances
+
+### 2026-09-24
+- Repo clonado y letra del obligatorio subida a `main`.
+- Creada rama `develop` para el trabajo.
+- Definido stack tecnológico inicial (ver `PLAN.md` §3).
+- Creados `PLAN.md` (plan + fases + stack) y `BITACORA.md` (este archivo).
+- Definidas convenciones: código 100% en español y flujo de ramas (feature → develop).
+- Fase 0 (setup): README, esqueleto del notebook y estructura de carpetas.
+- **Dataset cerrado:** Phishing Email Dataset (inglés) + enfoque multilingüe (chatbot ES+EN).
+- Agregado `kagglehub` a dependencias.
+- **Cambio de estructura:** de notebook a módulos `.py` (uno por fase) + `main.py`.
+- **Dataset consolidado:** `src/datos.py` + `scripts/consolidar_dataset.py` generan `data/dataset_consolidado.csv` (82.486 filas). Módulos esqueleto creados para Fases 2–6.
+- Entorno virtual `venv` creado; instalados kagglehub, pandas y python-dotenv.
+- **Fase 2 (ingesta):** `src/ingesta.py` + `scripts/construir_indice.py` — muestra 10k balanceada, chunking, embeddings e5 y Chroma (`chroma_db/`, colección `dataset`) indexado por lotes. Instaladas sentence-transformers, chromadb, langchain-chroma, langchain-huggingface, langchain-text-splitters.
+
+### 2026-10-01
+- **Fase 2 (papers):** `construir_indice_papers()` + `scripts/construir_indice_papers.py`. 2.937 fragmentos en la colección `papers`. Retrieval cross-lingual verificado (preguntas en español → página correcta del paper en inglés).
+- **Fase 3 (recuperación):** `src/recuperacion.py` con búsqueda, formateo con fuentes y 4 tools. `scripts/probar_recuperacion.py` para calibrar el umbral.
+- Probado con Python 3.14 (todas las dependencias instalan bien).
+
+### 2026-10-29
+- **Fase 4 (agente):** `src/agente.py` con el grafo manual (`agente` ↔ `herramientas`) y el prompt de sistema. `scripts/probar_agente.py` corre una batería de 7 consultas y muestra qué tools eligió el agente:
+  - small-talk ("Hola! cómo andás?") → sin tools ✔
+  - papers en ES y EN → `buscar_en_papers` filtrando por paper, responde citando páginas y en el idioma de la pregunta ✔
+  - "¿Cuántos correos de phishing hay?" → `estadisticas_dataset` (42.891 de 82.486) ✔
+  - ejemplo de phishing bancario → `buscar_en_dataset` dos veces (reformula en inglés); admite que no hay uno que pida *explícitamente* la contraseña del banco y muestra los más cercanos ✔
+  - "capital de Francia" → sin tools, conocimiento general ✔ (no aclaró que no sale de los documentos; ajuste menor de prompt pendiente)
+  - "¿Qué dice Attention sobre el mundial 2022?" → busca y admite que no tiene información ✔
+- **Índice del dataset** construido localmente (`python -m scripts.construir_indice`): 33.792 fragmentos de la muestra de 10k correos, 26 min con embeddings en CPU. Búsqueda cross-lingual OK ("reunión de trabajo" → correos de meetings de Enron; "pide contraseña" → phishing "Your Password Has Expired"). Batería del agente re-corrida completa sin errores.
+
+- **Fase 5 (memoria):** `src/memoria.py` + agente actualizado. `scripts/probar_memoria.py` verifica:
+  - Ana se presenta → el agente guarda "Se llama Ana y trabaja en el área de seguridad informática de un banco" ✔
+  - conversación nueva de Ana → recuerda nombre y trabajo (largo plazo) pero no lo que preguntó en la otra (conversaciones independientes) ✔
+  - se recrea el agente (simula reiniciar el programa) y Ana retoma la conversación 1 → recuerda que preguntó por multi-head attention (corto plazo persistido) ✔
+  - Ana y Beto en paralelo → Beto no sabe nada de Ana y viceversa ✔
+- Ajuste de prompt: en preguntas generales ahora aclara "esto es conocimiento general, no sale de los documentos cargados" ✔
+
+- **Fase 6 (chatbot):** `src/chatbot.py::iniciar_chat()` + `main.py` cableado. Loop de chat por consola con memorias persistentes y comandos `/nueva`, `/usuario <id>`, `/ayuda`, `/salir`. Muestra las tools usadas en cada turno. `README` actualizado con los comandos.
+
+---
+
+## Desafíos y soluciones
+*(se completa a medida que aparezcan)*
+
+| Desafío | Solución aplicada |
+|---------|-------------------|
+| La búsqueda siempre devuelve "algo", aunque la pregunta no tenga nada que ver con los documentos (ej. "receta de lasaña") → riesgo de alucinar con contexto irrelevante. | Umbral de relevancia: debajo de él la tool devuelve `SIN EVIDENCIA` y el agente debe admitir que no sabe. |
+| Los puntajes de e5 están "comprimidos" y se **solapan**: consultas pertinentes 0.72–0.83, ajenas 0.63–0.75 ("hola, ¿cómo estás?" dio 0.75). Un umbral solo no separa bien. | Umbral como **piso** (0.68: corta lo claramente ajeno sin perder preguntas válidas) + defensa en capas: el router no busca en small-talk y el generador verifica que los fragmentos respondan. |
+| Todas las consultas ajenas caían en la misma **tabla de números** de GPT-3 (pág. 63): los fragmentos sin texto real quedan "cerca de todo" en el espacio vectorial. | Filtro en la ingesta: se descartan fragmentos con < 50% de letras (34 de 2.971, casi todos tablas). Las tablas con contenido útil (Tabla 2 de Attention, parámetros de GPT-3) quedan por encima y se conservan. |
+| Las **bibliografías** de los papers también atraen consultas ajenas ("mundial de fútbol 2022" → referencias de GPT-3 con relevancia 0.69, apenas sobre el umbral). | **No se filtran** (decisión consciente): una heurística por años/"et al."/"arXiv" también marcaba párrafos con contenido real. Se cubre con las otras capas (router + prompt del generador que verifica que el fragmento responda). Queda como mejora posible. |
+| Sin el índice del dataset construido, Chroma crea una colección vacía y la búsqueda decía "sin evidencia", lo que el agente interpretaría como "no hay correos así". | La búsqueda detecta la colección vacía y la tool devuelve un `ERROR` explícito. |
+| El plan gratuito de Groq corta con error 429 (1000 tokens de salida/min para Qwen) y Qwen 3 gasta tokens "pensando" antes de responder. | `reasoning_effort="none"`, `max_retries=6` (espera y reintenta) y respuestas concisas por prompt. |
+| SQLite: `database is locked` / `cannot start a transaction within a transaction` al usar checkpointer y store sobre el mismo archivo. | Conexión en modo autocommit (`isolation_level=None`, como hace `SqliteStore.from_conn_string`): cada uno maneja sus propias transacciones. |
+| Buscar en la colección `dataset` mientras el índice se está construyendo en otro proceso da `chromadb InternalError: Error finding id`. | Es concurrencia de escritura/lectura de Chroma, no del agente: con el índice terminado la batería corre sin errores. El índice se construye una sola vez antes de usar el chatbot. |
+
+---
+
+## Prompts y prompt engineering
+*(guardar acá los prompts clave: router, generación, control de alucinaciones, extracción de memoria)*
+
+### Prompt de sistema del agente (`src/agente.py`, `PROMPT_SISTEMA`)
+Técnicas usadas:
+- **Rol** explícito (experto en phishing y en los papers).
+- **Descripción de cada tool y cuándo usarla** (complementa los docstrings de las tools, que son lo que el LLM lee para elegir).
+- **Clasificación de la consulta por instrucciones**: small-talk → sin tools; papers/dataset → tool obligatoria antes de responder; general → conocimiento propio aclarando que no viene de los documentos.
+- **Control de alucinaciones**: responder solo con los fragmentos; ante `SIN EVIDENCIA` o fragmentos que no responden, decir que no hay información; ante `ERROR`, avisar; citar fuente (paper + página o corpus).
+- **Idioma espejo**: responder en el idioma del usuario aunque los documentos estén en inglés.
+- **Concisión** (también por el límite de tokens de Groq).
+- **Memoria guiada por reglas**: qué guardar (datos duraderos del usuario), qué no (preguntas puntuales, datos sensibles) y para qué usarlo (personalizar). Los recuerdos se inyectan al final del prompt en cada turno.
+
+---
+
+## Uso de IA generativa (para citar en el informe)
+- **Herramienta:** Claude Code (Anthropic).
+- **Contexto de uso:** apoyo en la estructuración del proyecto, redacción de documentación (`PLAN.md`, `BITACORA.md`) y exploración de datasets. El 2026-11-05 también se usó para analizar el proyecto, corregir errores, implementar mejoras del chatbot, ejecutar pruebas y armar el notebook.
+- **A revisar antes de entregar:** cada integrante debe confirmar que esta lista refleja todo el uso real de IA.
+- **Responsabilidad:** todo el contenido generado con IA se revisa y verifica; los errores son responsabilidad del grupo.

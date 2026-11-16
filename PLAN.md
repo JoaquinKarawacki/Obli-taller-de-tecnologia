@@ -1,0 +1,232 @@
+# PLAN DE TRABAJO — Agentic RAG (Taller de Tecnologías 2)
+
+> Documento maestro: qué hay que hacer, en qué fases y con qué stack.
+> Las decisiones de diseño y el avance se registran en [`BITACORA.md`](./BITACORA.md).
+
+- **Materia:** Taller de Tecnologías 2 (7688) — Ingeniería en Sistemas, ORT
+- **Entrega:** 16/11/2026 hasta las 21:00 en gestion.ort.edu.uy (ZIP/RAR, máx. 40 MB)
+- **Defensa:** oral, presencial, **obligatoria y eliminatoria**
+- **Puntaje:** máx. 40 pts / mín. 1 pto
+- **Grupo:** hasta 3 personas del mismo dictado
+
+---
+
+## 1. Objetivo
+
+Desarrollar un **Agentic RAG** (chatbot en lenguaje natural) capaz de:
+
+1. Responder consultas sobre el **Phishing Email Dataset** de Kaggle (ciberseguridad, inglés), interactuando en **español o inglés**.
+2. Procesar **documentos largos (papers)** vía chunking y responder preguntas sobre ellos.
+3. Mantener contexto y orquestar acciones con **agentes + tool calling** y **memoria a corto y largo plazo**.
+
+---
+
+## 2. Requisitos obligatorios (checklist)
+
+### 2.1 Agentic RAG (núcleo)
+- [x] Recibe consultas del usuario.
+- [x] Recupera fragmentos relevantes de la base vectorial con **búsqueda semántica**.
+- [x] Decide cómo combinar la información y generar la respuesta.
+- [x] **Memoria a corto plazo** dentro de la misma conversación.
+- [x] **Múltiples conversaciones independientes**, con pausar/retomar sin pérdida de contexto.
+- [x] **Memoria a largo plazo** compartida entre conversaciones (info del usuario).
+- [x] El sistema **decide qué guardar en memoria y cuándo usarlo** según el contexto.
+- [x] Maneja distintos tipos de consulta: **preguntas sobre documentos / consultas generales / small-talk**, decidiendo dinámicamente.
+- [x] **Evita alucinar**: admite explícitamente cuando no tiene información suficiente.
+- [x] **Múltiples sesiones de usuario en paralelo**, identificadas de forma única.
+- [x] Integra **tool calling** (consulta a BD vectorial y funciones; sin API externa por ahora: la letra las da como ejemplos).
+
+### 2.2 Restricciones técnicas
+- [ ] Implementado en **Python**.
+- [ ] Orquestación con **LangGraph**.
+- [ ] ⚠️ **PROHIBIDO** usar `create_agent()`, `create_react_agent()` ni abstracciones de alto nivel que oculten la lógica del agente. **El grafo del agente se construye a mano.**
+
+### 2.3 Chatbot sobre el dataset
+- [ ] Responde preguntas sobre la temática elegida (ej.: películas, libros, recetas…).
+
+### 2.4 Conocimiento sobre documentos (papers)
+- [x] Chunking de documentos largos.
+- [x] Embeddings de los fragmentos → base vectorial (Chroma).
+- [x] Recupera los fragmentos más relevantes con búsqueda semántica.
+- [ ] Responde preguntas sobre cualquiera de los documentos usando el LLM.
+
+### 2.5 Técnicas comunes
+- [ ] Prompt engineering avanzado.
+- [ ] Control de alucinaciones.
+- [ ] Pipeline RAG completo integrado dentro del agente (recuperación + razonamiento + generación).
+
+### 2.6 Entregables
+- [ ] Implementación en **módulos `.py`** (decisión del equipo: más modular y legible que el notebook).
+- [ ] **Notebook demo** al cierre que importe los módulos y muestre outputs — para cubrir el "notebook funcional con sus outputs" que menciona la letra (ver nota en `BITACORA.md`).
+- [ ] Integra: LLM, embeddings, base vectorial, agentic RAG y chatbot.
+- [ ] Documentación completa (ver sección 6).
+
+---
+
+## 3. Stack tecnológico
+
+| Capa | Elección | Notas |
+|------|----------|-------|
+| Lenguaje | **Python 3.11+** | |
+| Entorno | `venv` + `requirements.txt`, `.env` para claves | No commitear claves |
+| Orquestación del agente | **LangGraph** (grafo manual) | Sin `create_react_agent` |
+| LLM | **Groq** (`qwen/qwen3.8-27b`; Llama 3.3 fue retirado de Groq) | Gratis y rápido, buen tool calling. vía `langchain-groq`. Necesita API key gratuita |
+| Embeddings | **`sentence-transformers` multilingüe** (`intfloat/multilingual-e5-small`) | Locales, gratis, buenos para español. Opcional: comparar con otro modelo |
+| Base vectorial | **ChromaDB** (persistente en disco) | Colecciones separadas: `dataset` y `papers` |
+| Manejo de datos | **pandas** | EDA + carga del dataset |
+| Chunking | `langchain-text-splitters` (`RecursiveCharacterTextSplitter`) | Probar tamaños/overlap |
+| Lectura de PDFs | **pypdf** / PyMuPDF (`fitz`) | Para los papers |
+| Memoria corto plazo | **Checkpointer de LangGraph** (`SqliteSaver`) | Aislada por `thread_id`, persistida en `memoria.sqlite3` |
+| Memoria largo plazo | **Store de LangGraph** (`SqliteStore`) | Compartida entre conversaciones, por `user_id` |
+| Sesiones paralelas | `thread_id` (conversación) + `user_id` (usuario) | |
+| Entregable | **Módulos `.py`** + **notebook con outputs** (`obligatorio_agentic_rag.ipynb`) | La letra pide el notebook como entregable; importa los módulos |
+| Interfaz | Chat por consola (`main.py`) + **API REST con FastAPI** (opcional) | Gradio se descartó el 2026-11-09 (ver `BITACORA.md`) |
+| Otros opcionales | Comparar embeddings/LLMs/chunking | Suman, no restan |
+
+> **Stack 100% gratuito:** Groq (LLM, free tier) + embeddings locales (`sentence-transformers`) + Chroma local. No requiere tarjeta ni servicios pagos.
+
+> El stack puede ajustarse; todo cambio se justifica en `BITACORA.md`.
+
+---
+
+## 4. Fases del trabajo
+
+### Fase 0 — Setup del proyecto
+- [x] Repo + rama `develop`.
+- [x] Entorno virtual + `requirements.txt`.
+- [x] `.env.example` y `.gitignore` (excluir `.env`, `data/`, `chroma_db/`).
+- [x] Estructura de carpetas.
+
+### Fase 1 — Datos
+- [x] Elegir dataset de Kaggle (temática + idioma).
+- [x] Descargar y explorar (EDA con pandas): columnas, tamaño, calidad.
+- [x] Papers: los 6 PDFs que da la materia ("Obligatorio setiembre 2026 - Papers"), copiados a `data/papers/`.
+
+### Fase 2 — Ingesta y embeddings
+- [x] Preprocesar dataset (muestra balanceada de 10k por indicación del profe).
+- [x] Chunking (RecursiveCharacterTextSplitter, 800/100).
+- [x] Generar embeddings (e5 multilingüe) y poblar Chroma (colección `dataset`), indexado por lotes.
+- [x] Poblar la colección `papers` (`construir_indice_papers`, texto por página con pypdf, metadatos título + página).
+
+### Fase 3 — Retrieval (RAG)
+- [x] Función de búsqueda semántica (top-k) sobre cada colección, con umbral de relevancia.
+- [x] Envolver el retrieval como **tool** del agente (`buscar_en_papers`, `buscar_en_dataset`, `listar_papers`, `estadisticas_dataset`).
+- [x] Prueba manual de calidad de recuperación (`scripts/probar_recuperacion.py`; papers OK, dataset pendiente de tener el índice local).
+
+### Fase 4 — Agente (LangGraph)
+- [x] Definir el estado del grafo (`MessagesState`).
+- [x] Decisión del tipo de consulta (documentos / general / small-talk): la toma el nodo `agente` (LLM + prompt), sin router aparte (ver BITACORA 2026-10-29).
+- [x] Nodo de tools escrito a mano (`herramientas`, sin `ToolNode`).
+- [x] Control de alucinaciones en el prompt de sistema ("no sé si no hay evidencia").
+- [x] Cablear el grafo a mano (nodos + edge condicional `decidir_siguiente`).
+- [x] Batería de prueba: `scripts/probar_agente.py`.
+
+### Fase 5 — Memoria y sesiones
+- [x] Memoria corto plazo por `thread_id` (checkpointer `SqliteSaver`).
+- [x] Múltiples conversaciones: pausar/retomar (persistido en `memoria.sqlite3`, sobrevive a reiniciar el programa).
+- [x] Memoria largo plazo (`SqliteStore`) por `user_id`: el agente decide qué guardar (tool `guardar_recuerdo`) y los recuerdos se agregan al prompt en cada turno.
+- [x] Sesiones de usuario en paralelo con IDs únicos (`user_id` + `thread_id` en el config).
+- [x] Prueba: `scripts/probar_memoria.py`.
+
+### Fase 6 — Chatbot y pruebas
+- [x] Loop de chat por consola (`src/chatbot.py::iniciar_chat` + `main.py`) con comandos (`/nueva`, `/usuario`, `/ayuda`, `/salir`).
+- [ ] Demo "con contexto vs sin contexto" (Parte 1 del Lab03) para mostrar el aporte del RAG.
+- [ ] Batería de preguntas variadas (dataset, papers, general, small-talk, "no sé"). *(parcial: `scripts/probar_agente.py`)*
+- [ ] Registrar resultados y ajustar prompts.
+
+### Fase 7 — Documentación y notebook final
+- [ ] Completar documentación mínima (sección 6).
+- [ ] Notebook limpio, ejecutado end-to-end, con outputs.
+- [ ] Citar uso de IA generativa.
+
+### Fase 8 — Opcionales (si da el tiempo)
+- [x] Comparar modelos de embeddings (sección 12 del notebook).
+- [x] Comparar estrategias de chunking/recuperación (sección 12 del notebook).
+- [x] Comparar LLMs (`src/comparacion_llms.py`, sección 12.7 del notebook).
+- [x] API con FastAPI (`src/api.py`, sección 12.6 del notebook).
+
+---
+
+## 5. Estructura de carpetas propuesta
+
+```
+Obli-taller-de-tecnologia/
+├── PLAN.md
+├── BITACORA.md
+├── README.md
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── main.py                    # punto de entrada
+├── src/                       # módulos del sistema (uno por fase)
+│   ├── config.py              # rutas, modelos y constantes
+│   ├── datos.py               # Fase 1: consolidación del dataset
+│   ├── ingesta.py             # Fase 2: chunking + embeddings + Chroma
+│   ├── recuperacion.py        # Fase 3: búsqueda semántica (tool)
+│   ├── agente.py              # Fase 4: grafo LangGraph
+│   ├── memoria.py             # Fase 5: memoria corto/largo plazo
+│   └── chatbot.py             # Fase 6: loop de conversación
+├── scripts/
+│   ├── consolidar_dataset.py  # genera data/dataset_consolidado.csv
+│   ├── construir_indice.py    # índice del dataset (colección dataset)
+│   ├── construir_indice_papers.py  # índice de los papers (colección papers)
+│   ├── probar_recuperacion.py # calibración del umbral de relevancia
+│   ├── probar_agente.py       # batería de consultas al agente
+│   └── probar_memoria.py      # memoria corto/largo plazo y sesiones en paralelo
+├── data/                      # dataset + papers (no se commitea)
+├── chroma_db/                 # base vectorial persistida (no se commitea)
+└── memoria.sqlite3            # conversaciones y recuerdos de usuarios (no se commitea)
+```
+
+---
+
+## 6. Documentación mínima requerida (para el informe)
+- [ ] Arquitectura del agentic RAG y justificación técnica (LLM, embeddings, base vectorial, pipeline, agentes).
+- [ ] Estrategia de memoria corto/largo plazo: cómo se almacena, recupera y usa.
+- [ ] Ejemplos de prompts y estrategias de prompt engineering.
+- [ ] Desafíos encontrados y soluciones.
+- [ ] Pruebas y resultados del chatbot.
+- [ ] Reflexión sobre mejoras y experimentación opcional.
+- [ ] **Citación del uso de IA generativa** (herramientas y contexto de uso).
+
+---
+
+## 7. Presentación en clase
+- Presentación grupal oral sobre algún aspecto del obligatorio.
+- Entre el **16 y el 27 de noviembre** (tema a coordinar con docentes).
+
+---
+
+## 8. Convenciones del proyecto
+
+### 8.1 Idioma del código
+- **Todo el código en español al 100%.** Nombres de variables, funciones, clases, comentarios, docstrings, mensajes de log y prompts se escriben en español.
+- Ejemplos: `buscar_fragmentos()`, `memoria_largo_plazo`, `clasificar_consulta()`, `respuesta_generada`.
+- Excepción razonable: nombres propios de librerías/APIs (`LangGraph`, `thread_id`, etc.) se mantienen como son.
+- Los textos que ve el usuario final del chatbot también en español.
+
+### 8.2 Flujo de trabajo con Git (branching)
+- Rama estable de integración: **`develop`**.
+- **Una rama por cada tarea/feature**, que sale de `develop`:
+  - Nomenclatura: `feature/<descripcion-corta>` (ej.: `feature/ingesta-embeddings`, `feature/agente-router`).
+  - Otros prefijos según el caso: `fix/`, `docs/`, `experimento/`.
+- Al terminar la tarea, **merge de la rama a `develop`** (y se borra la rama de feature).
+- `main` queda como rama de entrega/estable; se mergea `develop → main` en los hitos.
+- Commits en español, descriptivos.
+
+```
+main ──────●───────────────────●──────  (entregas / hitos)
+            \                  /
+develop ─────●────●────●──────●────────  (integración)
+                   \    \
+                    \    feature/agente-router
+                     feature/ingesta-embeddings
+```
+
+---
+
+## 9. Definiciones y pendientes
+- [x] **Dataset / temática:** `naserabdullahalam/phishing-email-dataset` — Phishing Email Dataset (ciberseguridad, **inglés**).
+- [x] **Enfoque multilingüe:** datos en inglés, chatbot en **ES + EN** (LLM y embeddings multilingües → retrieval cross-lingual).
+- [x] Integrantes del grupo y números de estudiante (en `INFORME.md`).
+- [x] Papers: los 6 de la materia (Attention, GPT, GPT-3, Scaling Laws, Subliminal Learning, Designing Data-Intensive Applications).
