@@ -1,6 +1,6 @@
 # Guion de la defensa: introducción y demo
 
-Diapositivas 1 a 5. Dura unos 4:45: 2:30 de introducción y 2:15 de video narrado en vivo.
+Diapositivas 1 a 5. El video nuevo dura unos 5:30 narrado en vivo. Para no pasar los 10 minutos, las diapositivas 1 a 4 tienen que entrar en 1:30 y las 6 a 11 en unos 3:00: hay que recortar los textos de las diapositivas 1 a 4.
 **A** y **B** son dos de los tres integrantes; el tercero arranca en la diapositiva 6 con la preparación de los datos.
 
 ## Diapositiva 1 · Portada (A, 0:15)
@@ -25,18 +25,27 @@ Diapositivas 1 a 5. Dura unos 4:45: 2:30 de introducción y 2:15 de video narrad
 >
 > La memoria tiene dos niveles. La de corto plazo es la conversación: los últimos 12 mensajes, por thread_id. La de largo plazo es del usuario: nombre, trabajo, intereses, por user_id, y sobrevive entre conversaciones. Ahora lo van a ver funcionando.
 
-## Diapositiva 5 · Video de la demo (B, 2:15)
+## Diapositiva 5 · Video de la demo (B, ~5:30)
 
-Los tiempos son del video ya recortado: empieza en el 0:55 del original y termina en el 3:06.
+El video se graba ejecutando `demo_video.ipynb` celda por celda (`abrir_demo.bat`) y recortando las esperas.
+Los tiempos de cada tramo son aproximados: se ajustan con el video ya editado.
 Si en algún tramo se termina el texto antes de tiempo, se puede quedar callado: la respuesta en pantalla se lee sola.
 
-| Video | En pantalla | Qué decir |
+| Tramo | En pantalla | Qué decir |
 |---|---|---|
-| 0:00–0:15 | Tabla de secciones y la celda que dice «Agente listo» | «Esta es una notebook de demo; arriba está el mapa de la notebook principal, con sus doce secciones. Primero se carga el agente con sus dos memorias. Cada pregunta va en una conversación nueva.» |
-| 0:15–0:35 | Pregunta 1: GPT-3 | «Preguntamos cuántos parámetros tiene GPT-3. Fíjense en la línea de tools: eligió buscar_en_papers. Recupera fragmentos del paper y responde 175 mil millones, citando el documento y la página.» |
-| 0:35–0:50 | Pregunta 2: correos de phishing | «Ahora una pregunta de conteo. Acá la búsqueda semántica no sirve, porque trae solo algunos correos parecidos. Entonces usa estadisticas_dataset, que cuenta con pandas sobre los 82.486: son 42.891 de phishing, con el desglose por fuente.» |
-| 0:50–1:15 | Pregunta 3: el mundial 2022 (la espera más larga) | «Ahora algo que no está en los datos: qué dice el paper de Attention sobre el mundial 2022. Mientras espera, les cuento qué pasa: busca en el paper, pero ningún fragmento supera el umbral de similitud de 0,68, y la herramienta le devuelve SIN EVIDENCIA. Por el prompt, en ese caso tiene que admitirlo. Y efectivamente responde que no tiene información, en lugar de inventar.» |
-| 1:15–1:50 | Pregunta 4: «Soy Nico y trabajo en ciberseguridad» | «Ahora le contamos quiénes somos. Esto no es una pregunta: el agente reconoce que es un dato personal y llama a guardar_recuerdo. Eso lo escribe en la memoria de largo plazo, asociada a este usuario. Abajo se ve lo que quedó guardado: se llama Nico y trabaja en ciberseguridad.» |
-| 1:50–2:15 | Pregunta 5: «¿Te acordás cómo me llamo?» | «Y la prueba: una conversación nueva, con otro thread_id y sin historial. Igual responde que me llamo Nico y trabajo en ciberseguridad. No usó ninguna herramienta, porque los recuerdos del usuario se agregan al prompt en cada turno. La memoria no está en el modelo, está en el sistema que lo rodea.» |
+| ~0:15 | Tabla de secciones y la celda que dice «Agente listo» | «Esta es una notebook de demo; arriba está el mapa de la notebook principal. Primero se carga el agente con sus dos memorias. Debajo de cada respuesta van a ver qué herramienta eligió.» |
+| ~0:20 | 1. Small-talk | «Empezamos con un saludo. No hace falta buscar nada, así que responde directo: la línea de tools dice ninguna.» |
+| ~0:25 | 2. GPT-3 | «Preguntamos cuántos parámetros tiene GPT-3. Ahora sí eligió buscar_en_papers: recupera fragmentos del paper y responde 175 mil millones, citando el documento y la página.» |
+| ~0:25 | 3. «¿Y con cuántos tokens lo entrenaron?» | «Seguimos en la misma conversación. La pregunta no dice GPT-3, dice "lo": lo entiende por el historial. Esa es la memoria de corto plazo.» |
+| ~0:25 | 4. Pregunta en inglés | «Ahora en inglés, sobre Scaling Laws. Busca igual y responde en inglés: la pérdida baja como una ley de potencia con el tamaño del modelo.» |
+| ~0:30 | 5. Resumen de Attention | «Un pedido de la letra: resumir Attention Is All You Need en tres párrafos. Para resumir trae más fragmentos del mismo paper.» |
+| ~0:25 | 6. Correos de phishing | «Una pregunta de conteo. La búsqueda semántica no sirve para contar, así que usa estadisticas_dataset, que cuenta con pandas sobre los 82.486: 42.891 de phishing.» |
+| ~0:20 | 7. Ranking de dominios | «También con pandas: los dominios que más phishing mandan, con ranking_dataset.» |
+| ~0:30 | 8. Correo sospechoso | «Le pegamos un correo que nos llegó. Usa buscar_en_dataset para traer correos parecidos y explica por qué se parece a phishing: urgencia, cuenta suspendida, pedido de contraseña.» |
+| ~0:25 | 9. El mundial 2022 | «Algo que no está en los datos. Ningún fragmento supera el umbral de 0,68 y la herramienta devuelve SIN EVIDENCIA: el agente admite que no tiene información en lugar de inventar.» |
+| ~0:30 | 10. «Soy Nico y trabajo en ciberseguridad» | «Esto no es una pregunta: reconoce un dato personal y llama a guardar_recuerdo. Abajo se ve lo que quedó en la memoria de largo plazo.» |
+| ~0:25 | 11. «¿Te acordás cómo me llamo?» | «Conversación nueva, sin historial. Igual sabe que soy Nico y trabajo en ciberseguridad, sin usar herramientas: los recuerdos se agregan al prompt en cada turno.» |
+| ~0:30 | 12. Reiniciar y retomar | «Reconstruimos el agente desde cero, como si cerráramos el programa, y volvemos a la conversación de GPT-3. Recuerda lo que le preguntamos: el historial queda guardado en SQLite, así que se puede pausar y retomar.» |
+| ~0:20 | 13. Otro usuario | «Por último, otro usuario, Ana. No sabe cómo se llama: cada usuario tiene sus propios recuerdos. La memoria no está en el modelo, está en el sistema que lo rodea.» |
 
 Al terminar, pasa la palabra: «Ahora [nombre] les cuenta cómo preparamos los datos para que esto funcione.»
